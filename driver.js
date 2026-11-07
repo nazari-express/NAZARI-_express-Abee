@@ -4,7 +4,11 @@
   const U = NZ.ui, V = NZ.v;
   const { html, str, ic, btn, field, fcfa, fwhen, empty, statusChip, SERVICE } = U;
 
-  const mapsHref = (...parts) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(parts.filter(Boolean).concat(['Agadez', 'Niger']).join(', '));
+  const mapsHref = (...parts) => {
+    const g = parts.map((x) => V.geoParse(x)).find(Boolean);      // position GPS partagée par le client : itinéraire exact
+    if (g) return V.geoRouteHref(g);
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(parts.filter(Boolean).concat(['Agadez', 'Niger']).join(', '));
+  };
 
   /* =====================================================================
      Liste des courses
@@ -54,7 +58,7 @@
       ${o.extra || ''}</div>`
     : html`<div class="card"><div class="h2" style="margin-bottom:8px">${title}</div>
     <div style="font-weight:700">${o.name || '—'}</div>
-    ${o.quartier ? html`<div>${o.quartier}</div>` : ''}${o.details ? html`<div class="muted">${o.details}</div>` : ''}
+    ${o.quartier ? html`<div>${o.quartier}</div>` : ''}${o.details ? html`<div class="muted">${V.detailsHtml(o.details)}</div>` : ''}
     ${o.phone ? html`<div class="muted" style="margin-top:2px">+227 ${U.fphone(o.phone)}</div>` : ''}
     ${o.extra || ''}
     <div class="actions">${o.phone ? btn({ href: U.telLink(o.phone), label: 'Appeler', kind: 'ghost', size: 'sm', icon: 'phone' }) : ''}${o.phone ? btn({ href: U.waLink(o.phone, o.wa || ''), label: 'WhatsApp', kind: 'ghost', size: 'sm', icon: 'wa' }) : ''}${btn({ href: mapsHref(o.details, o.quartier), label: 'Itinéraire', kind: 'ghost', size: 'sm', icon: 'map' })}</div></div>`;

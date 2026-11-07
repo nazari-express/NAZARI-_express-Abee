@@ -172,7 +172,7 @@
     return html`<div style="margin-bottom:14px">${btn({ label: 'Ajouter un quartier', full: true, icon: 'plus', act: 'zone-edit' })}</div>
       ${CAT.pending_zones.length ? html`<div class="card" style="margin-bottom:14px"><div class="h2">Quartiers saisis par les clients</div><p class="small muted" style="margin:2px 0 10px">Touchez un quartier pour l'ajouter à la liste.</p>
         <div class="addr-chips">${CAT.pending_zones.map((z) => html`<button type="button" data-act="zone-edit" data-name="${z.name}">${z.name} · ${z.count}</button>`)}</div></div>` : ''}
-      ${CAT.quartiers.length ? html`<div class="list">${CAT.quartiers.map((q) => row({ icon: 'pin', tone: q.active ? '' : 'red', title: q.name, sub: q.far ? 'Zone éloignée · + ' + fcfa(f) : 'Zone normale', act: 'zone-edit', id: q.id, end: q.active ? '' : html`<span class="chip cancelled">Masqué</span>` }))}</div>` : empty('map', 'Aucun quartier', 'Ajoutez les quartiers où vous livrez.')}`;
+      ${CAT.quartiers.filter((q) => !V.isGeoName(q.name)).length ? html`<div class="list">${CAT.quartiers.filter((q) => !V.isGeoName(q.name)).map((q) => row({ icon: 'pin', tone: q.active ? '' : 'red', title: q.name, sub: q.far ? 'Zone éloignée · + ' + fcfa(f) : 'Zone normale', act: 'zone-edit', id: q.id, end: q.active ? '' : html`<span class="chip cancelled">Masqué</span>` }))}</div>` : empty('map', 'Aucun quartier', 'Ajoutez les quartiers où vous livrez.')}`;
   };
   NZ.route('/admin/zones', async (ctx) => {
     ctx.shell({ title: 'Quartiers', back: '#/admin/more', tab: 'more' });

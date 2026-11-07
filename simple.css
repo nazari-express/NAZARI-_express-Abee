@@ -289,6 +289,17 @@ svg.il { display: block; flex: none; }
 .idcard-box h2 { font-size: 16px; margin-bottom: 4px; }
 .idcard-box p { font-size: 13.5px; color: #6b4a00; margin-bottom: 10px; }
 
+/* ---------- position GPS ---------- */
+.lochero { display: grid; place-items: center; margin: 2px 0 16px; }
+.lochero svg { max-width: 100%; height: auto; }
+.locbox { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 26px 18px; border-radius: 28px; border: 3px solid var(--cl-line); background: var(--cl-card); box-shadow: 0 5px 0 var(--cl-line-d); font-size: 17px; line-height: 1.3; color: var(--cl-soft); }
+.locbox b { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; color: var(--forest); }
+.locbox.wait { border-style: dashed; }
+.locbox.ok { background: var(--mint); border-color: var(--green); box-shadow: 0 5px 0 var(--green); color: var(--forest); }
+.locbox.ok svg.ic { color: var(--green); }
+.callme svg.il { flex: none; }
+.shell.cl .btn.callme.sel { border-color: var(--green); background: var(--mint); box-shadow: 0 4px 0 var(--green); }
+
 @media (max-width: 350px) {
   .qt { font-size: 24px; }
   .svc .ilbox { width: 88px; height: 88px; }

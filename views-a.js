@@ -111,7 +111,7 @@
       ${P.xl ? html`<p class="small muted" style="margin:-4px 4px 0">Au-delà de 20 kg, le prix est confirmé par l'équipe (à partir de ${fcfa(P.xl)}).</p>` : ''}
       <div class="card pad0"><table class="tbl"><thead><tr><th colspan="2">Suppléments</th></tr></thead><tbody>
         <tr><td>Livraison express (même jour)</td><td class="r num p">+ ${fcfa(P.express)}</td></tr>
-        <tr><td>Zone éloignée (quartiers excentrés)</td><td class="r num p">+ ${fcfa(P.far)}</td></tr>
+        <tr><td>Loin du centre d'Agadez (quartiers excentrés)</td><td class="r num p">+ ${fcfa(P.far)}</td></tr>
       </tbody></table></div>
       <div class="card pad0"><table class="tbl"><thead><tr><th colspan="2">Pharmacie</th></tr></thead><tbody>
         <tr><td>Livraison de vos médicaments</td><td class="r num p">${fcfa(P.pharmacy)}</td></tr>
@@ -124,15 +124,16 @@
 
   const FAQ = [
     ['Comment passer une commande ?', 'Sur l\'accueil, touchez un des trois grands dessins : « Envoyer un colis », « Récupérer un colis » ou « Pharmacie ». Il n\'y a qu\'une question par écran. Le bouton rond avec le haut-parleur lit l\'écran à voix haute. À la fin vous recevez un numéro de commande, par exemple NZ-20261018-001-K7QF : gardez-le en entier, il sert au suivi.'],
-    ['Combien coûte la livraison ?', 'Le prix dépend de la taille du colis : de 1 000 FCFA pour un petit colis jusqu\'à 2 500 FCFA pour un grand colis. Au-delà de 20 kg, le prix est confirmé sur devis. Un supplément s\'ajoute pour un quartier éloigné. Le prix est toujours visible avant d\'envoyer la commande.'],
-    ['Comment envoyer un colis à l\'agence ?', 'Touchez « Envoyer un colis », choisissez l\'agence de transport et la ville, puis la taille du colis. Donnez votre prénom, votre nom et votre numéro, puis ceux de la personne qui reçoit. Un livreur vient chercher le colis chez vous et le dépose à l\'agence. Pas besoin de carte d\'identité pour envoyer.'],
-    ['Comment récupérer un colis arrivé à l\'agence ?', 'Touchez « Récupérer un colis », choisissez l\'agence, puis prenez en photo votre carte d\'identité : elle est obligatoire, et votre nom y est déjà écrit. Ajoutez votre numéro. Le livreur retire le colis à l\'agence et vous le livre à domicile.'],
+    ['Combien coûte la livraison ?', 'Le prix dépend de la taille du colis : de 1 000 FCFA pour un petit colis jusqu\'à 2 500 FCFA pour un grand colis. Au-delà de 20 kg, le prix est confirmé sur devis. Un petit supplément s\'ajoute si vous êtes loin du centre d\'Agadez. Le prix est toujours visible avant d\'envoyer la commande.'],
+    ['Comment envoyer un colis à l\'agence ?', 'Touchez « Envoyer un colis », choisissez l\'agence de transport et la ville, puis la taille du colis. Donnez votre prénom, votre nom et votre numéro, puis ceux de la personne qui reçoit. Partagez votre position avec le téléphone : un livreur vient chercher le colis directement chez vous et le dépose à l\'agence. Pas besoin de carte d\'identité pour envoyer.'],
+    ['Comment récupérer un colis arrivé à l\'agence ?', 'Touchez « Récupérer un colis », choisissez l\'agence, puis prenez en photo votre carte d\'identité : elle est obligatoire, et votre nom y est déjà écrit. Ajoutez votre numéro et partagez votre position. Le livreur retire le colis à l\'agence et vous le livre à domicile.'],
     ['Que devient la photo de ma carte d\'identité ?', 'Elle sert seulement à retirer votre colis. Seuls l\'équipe et le livreur de votre course peuvent la voir, et elle est effacée automatiquement peu après la fin de la commande.'],
     ['Comment parler à l\'équipe ?', 'Touchez « Discussion » en bas de l\'écran : vous écrivez directement à l\'équipe, avec des messages ou des photos. Les messages et les photos disparaissent automatiquement après 24 heures.'],
     ['Comment et quand payer ?', 'Vous payez au livreur, en espèces. Selon le service, le paiement se fait à l\'enlèvement (envoi à l\'agence) ou à la livraison (retrait à l\'agence, pharmacie). Le livreur ne demande jamais d\'argent avant d\'avoir récupéré votre colis.'],
     ['Comment fonctionne la livraison de pharmacie ?', 'Choisissez la pharmacie, puis photographiez votre ordonnance ou écrivez votre liste de médicaments. Nous confirmons le prix avec la pharmacie, puis un livreur récupère la commande fermée et vous la livre. Le contenu de votre commande reste confidentiel : le livreur ne voit pas la liste.'],
     ['Puis-je annuler une commande ?', 'Oui, tant que la commande est « Reçue » ou « Validée », depuis la page de la commande. Ensuite, écrivez-nous dans la discussion.'],
-    ['Quelles zones desservez-vous ?', 'Agadez et ses quartiers. Les quartiers éloignés ont un petit supplément. Si vous ne connaissez pas votre quartier, touchez « Appelez-moi » : nous vous appelons pour confirmer.'],
+    ['Quelles zones desservez-vous ?', 'Nous livrons à Agadez. Si vous êtes loin du centre, un petit supplément s\'ajoute : il est affiché avant d\'envoyer la commande. Si votre téléphone ne trouve pas votre position, touchez « Appelez-moi à la place » : nous vous appelons pour confirmer l\'endroit.'],
+    ['Comment partager ma position ?', 'Touchez le grand bouton vert « Partager ma position », puis « Autoriser » quand le téléphone le demande. Le GPS (la localisation) du téléphone doit être allumé. Si cela ne marche pas, sortez dehors et réessayez. Seuls l\'équipe et le livreur de votre course voient votre position, et seulement quand il prend la course.'],
     ['J\'ai oublié mon code secret', 'Écrivez-nous dans la discussion ou sur WhatsApp avec votre numéro : l\'équipe peut vous donner un nouveau code provisoire.'],
   ];
   NZ.route('/help', (ctx) => {

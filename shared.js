@@ -48,6 +48,36 @@
   NZ.weakPin = (p) => /^(\d{1,5})\1+$/.test(p) || /^((\d)\2){2,5}$/.test(p) || '01234567890123456789'.includes(p) || '98765432109876543210'.includes(p) || WEAK_PINS.includes(p);
   NZ.WEAK_PIN_MSG = 'Ce code est trop simple (1234, 0000, chiffres qui se répètent…). Choisissez-en un autre.';
 
+  /* ---------- position GPS du client ----------
+     Le client partage sa position : elle est rangée dans les « précisions » de l'adresse, sous la forme
+     « GPS 16.973300,7.990800 (±12 m) ». L'équipe en tire un bouton d'itinéraire. */
+  V.GEO = { lat: 16.9733, lng: 7.9911, farKm: 6, outKm: 40, name: 'Position GPS', farName: 'Position GPS éloignée' };
+  V.isGeoName = (n) => n === V.GEO.name || n === V.GEO.farName;
+  V.geoKm = (lat, lng) => {
+    const R = 6371, rad = Math.PI / 180;
+    const dLat = (lat - V.GEO.lat) * rad, dLng = (lng - V.GEO.lng) * rad;
+    const x = Math.sin(dLat / 2) ** 2 + Math.cos(V.GEO.lat * rad) * Math.cos(lat * rad) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(x)));
+  };
+  V.geoText = (g) => 'GPS ' + g.lat.toFixed(6) + ',' + g.lng.toFixed(6) + (g.acc ? ' (±' + g.acc + ' m)' : '');
+  V.geoParse = (s) => {
+    const m = /GPS\s+(-?\d{1,2}\.\d{3,7}),(-?\d{1,3}\.\d{3,7})(?:\s*\(\s*±?\s*(\d{1,5})\s*m\s*\))?/.exec(String(s || ''));
+    if (!m) return null;
+    const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+    if (!(Math.abs(lat) <= 90 && Math.abs(lng) <= 180)) return null;
+    const rest = String(s).replace(m[0], '').replace(/^[\s·]+|[\s·]+$/g, '');
+    return { lat, lng, acc: m[3] ? parseInt(m[3], 10) : 0, rest };
+  };
+  V.geoHref = (g) => 'https://www.google.com/maps/search/?api=1&query=' + g.lat.toFixed(6) + ',' + g.lng.toFixed(6);
+  /* itinéraire depuis la position du livreur jusqu'à celle du client */
+  V.geoRouteHref = (g) => 'https://www.google.com/maps/dir/?api=1&destination=' + g.lat.toFixed(6) + ',' + g.lng.toFixed(6) + '&travelmode=driving';
+  /* précisions d'une adresse : le texte du client + un lien « Ouvrir la position » si elle contient un GPS */
+  V.detailsHtml = (d) => {
+    const g = V.geoParse(d);
+    if (!g) return d || '';
+    return html`${g.rest ? g.rest + ' · ' : ''}<a href="${V.geoHref(g)}" target="_blank" rel="noopener noreferrer" style="font-weight:700;display:inline-flex;align-items:center;gap:4px">${ic('pin', 14)} Ouvrir sur la carte${g.acc ? ' (±' + g.acc + ' m)' : ''}</a>`;
+  };
+
   /* ---------- lieux de départ / d'arrivée ---------- */
   V.fromText = (o) => {
     if (o.service === 'agency_pickup' || o.service === 'pharmacy') return [o.partner_name || (o.service === 'pharmacy' ? 'Pharmacie' : 'Agence'), o.pickup.quartier];
@@ -72,7 +102,7 @@
         o.service === 'agency_pickup' && o.agency_ref ? 'Retrait au nom / reçu : ' + o.agency_ref : '');
     } else {
       from = side('De', 's', o.pickup.quartier || '—',
-        o.pickup.details,
+        V.detailsHtml(o.pickup.details),
         withPhones ? contact(o.pickup.name, o.pickup.phone) : o.pickup.name);
     }
     if (o.service === 'agency_drop') {
@@ -81,7 +111,7 @@
         ['Destination : ' + (o.agency_dest || '—'), withPhones ? contact(o.dest_name, o.dest_phone) : o.dest_name].filter(Boolean).join(' — '));
     } else {
       to = side('Vers', 'r', o.drop.quartier || '—',
-        o.drop.details,
+        V.detailsHtml(o.drop.details),
         withPhones ? contact(o.drop.name, o.drop.phone) : o.drop.name);
     }
     return html`<dl class="route">${from}${to}</dl>`;
@@ -142,7 +172,7 @@
 
   /* un quartier : liste + « Autre quartier… » */
   V.quartierOptions = function (value) {
-    const q = (NZ.config && NZ.config.quartiers) || [];
+    const q = ((NZ.config && NZ.config.quartiers) || []).filter((x) => !V.isGeoName(x.name));
     const opts = [{ v: '', t: 'Choisir un quartier' }].concat(q.map((x) => ({ v: x.name, t: x.name + (x.far ? ' (zone éloignée)' : '') })), [{ v: '__other', t: 'Autre quartier…' }]);
     return opts;
   };

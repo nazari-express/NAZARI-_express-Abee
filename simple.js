@@ -182,42 +182,41 @@
       <button type="button" class="svc t" data-act="start" data-flow="pickup" data-vid="h2"><span class="ilbox">${il('pickup', 92)}</span><span class="st"><b>Récupérer un colis</b><small>arrivé à l'agence</small><em>dès ${fcfa(P.small)}</em></span>${ic('chev', 28)}</button>
       <button type="button" class="svc b" data-act="start" data-flow="pharma" data-vid="h3"><span class="ilbox">${il('pharmacy', 92)}</span><span class="st"><b>Pharmacie</b><small>vos médicaments chez vous</small><em>dès ${fcfa(P.pharmacy)}</em></span>${ic('chev', 28)}</button>`;
   }
-  function homeView(items, hello) {
+  function homeView(hello) {
     const P = NZ.prices(), co = NZ.company();
     const first = firstOf(NZ.user());
     return html`<div class="home">
       ${hello ? html`<div class="hello"><div class="ht"><h1>Bonjour${first ? ' ' + first : ''} !</h1><p>Que voulez-vous faire ?</p></div>${VO.btn()}</div>` : ''}
       ${co.maintenance ? html`<div class="err-box">${ic('alert', 26)}<div>Les nouvelles commandes sont suspendues pour le moment.</div></div>` : ''}
-      ${items && items.length ? html`<div class="sec-t" style="margin-top:0">Mon colis en cours</div>${items.map(orderCard)}<div class="sec-t">Une nouvelle commande</div>` : ''}
       ${services(P)}
     </div>`;
   }
   NZ.route('/', async (ctx) => {
     ctx.shell({ brand: true, menu: false, right: '', cls: 'cl', tab: 'home', skeleton: false });
-    let items = [], sig = '[]';
-    ctx.main(homeView(items, true));
+    ctx.main(homeView(true));
     const P = NZ.prices();
-    VO.screen(() => {
-      const parts = [{ t: 'Bonjour. Que voulez-vous faire ?' }];
-      items.forEach((o) => parts.push({ t: 'Votre colis en cours : ' + orderTitle(o) + '. ' + (ST[o.status] || ST.received).t + '.', sel: '[data-vid="o-' + o.id + '"]' }));
-      parts.push({ t: 'Envoyer un colis à l\'agence de transport. À partir de ' + VO.fcfa(P.small) + '.', sel: '[data-vid="h1"]' });
-      parts.push({ t: 'Récupérer un colis arrivé à l\'agence. À partir de ' + VO.fcfa(P.small) + '.', sel: '[data-vid="h2"]' });
-      parts.push({ t: 'Pharmacie : vos médicaments chez vous. À partir de ' + VO.fcfa(P.pharmacy) + '.', sel: '[data-vid="h3"]' });
-      return parts;
-    });
+    VO.screen(() => [
+      { t: 'Bonjour. Que voulez-vous faire ?' },
+      { t: 'Envoyer un colis à l\'agence de transport. À partir de ' + VO.fcfa(P.small) + '.', sel: '[data-vid="h1"]' },
+      { t: 'Récupérer un colis arrivé à l\'agence. À partir de ' + VO.fcfa(P.small) + '.', sel: '[data-vid="h2"]' },
+      { t: 'Pharmacie : vos médicaments chez vous. À partir de ' + VO.fcfa(P.pharmacy) + '.', sel: '[data-vid="h3"]' },
+    ]);
+    /* seuls changements possibles sur cet écran : la mise en maintenance et les prix */
+    const sigOf = () => String(!!NZ.company().maintenance) + JSON.stringify(NZ.prices());
+    let sig = sigOf();
     const load = async () => {
-      const r = await NZ.api('order.list', { scope: 'active', limit: 3 });
-      const s = JSON.stringify(r.items) + NZ.company().maintenance;
-      if (s !== sig) { sig = s; items = r.items; NZ.scrollKeep(() => ctx.main(homeView(items, true))); }
+      await NZ.loadConfig();
+      const s = sigOf();
+      if (s !== sig) { sig = s; NZ.scrollKeep(() => ctx.main(homeView(true))); }
     };
     try { await Promise.all([load(), NZ.refreshMe()]); } catch (e) { return ctx.fail(e); }
-    ctx.poll(20000, load);
+    ctx.poll(60000, load);
   }, { roles: ['client'] });
 
   /* équipe : « passer une commande pour un client » */
   NZ.route('/new', (ctx) => {
     ctx.shell({ title: 'Nouvelle commande', back: NZ.homeHash(), cls: 'cl', tab: 'home', skeleton: false });
-    ctx.main(homeView(null, false));
+    ctx.main(homeView(false));
     VO.screen(() => [{ t: 'Choisissez le type de commande.' }]);
   });
 
@@ -248,7 +247,7 @@
     return {
       flow, key: NZ.newKey(), partner: null, other: false, partnerName: '', city: '', cityOther: false, cityName: '', size: '',
       sender: { first: fn, last: ln, phone: u.phone || '' }, recip: { first: '', last: '', phone: '' },
-      quartier: '', myPhone: u.phone || '', photo: '', rxMode: '', list: '', rxPhoto: '', err: '',
+      quartier: '', loc: null, locState: '', locErr: '', myPhone: u.phone || '', photo: '', rxMode: '', list: '', rxPhoto: '', err: '',
     };
   }
 
@@ -259,7 +258,8 @@
     if (D.flow === 'pharma') base = P.pharmacy; else { tier = sizeOf(D).key; base = P[tier]; quote = tier === 'xl'; }
     const pq = D.flow === 'send' ? D.quartier : partnerQ(D);
     const dq = D.flow === 'send' ? partnerQ(D) : D.quartier;
-    const zs = [NZ.zone(pq), NZ.zone(dq)];
+    const side = (q) => (D.loc && q === D.quartier ? (D.loc.far ? 'far' : 'near') : NZ.zone(q));
+    const zs = [side(pq), side(dq)];
     const far = zs.includes('far'), unknown = zs.includes('unknown');
     return { base, quote, far, unknown, farFee: far ? P.far : 0, total: base + (far ? P.far : 0) };
   }
@@ -269,7 +269,7 @@
     city: (D) => nm(D.cityName), size: () => false,
     sender: (D) => nm(D.sender.first) && nm(D.sender.last) && ph8(D.sender.phone),
     recip: (D) => nm(D.recip.first) && nm(D.recip.last) && ph8(D.recip.phone),
-    where: () => false, idcard: (D) => !!D.photo, myphone: (D) => ph8(D.myPhone),
+    where: (D) => !!D.loc || !!D.quartier, idcard: (D) => !!D.photo, myphone: (D) => ph8(D.myPhone),
     list: (D) => (D.rxMode === 'photo' ? !!D.rxPhoto : D.rxMode === 'text' ? cleanName(D.list).length >= 3 : false),
     review: () => true,
   };
@@ -343,14 +343,43 @@
     recip: (D) => whoStep(D, 'recip', 'Qui reçoit le colis ?', 'Écrivez le prénom, le nom et le numéro de téléphone de celui qui reçoit.'),
 
     where(D) {
-      const Q = (NZ.config && NZ.config.quartiers) || [];
       const q = D.flow === 'send' ? 'Où venons-nous prendre le colis ?' : D.flow === 'pickup' ? 'Où apportons-nous le colis ?' : 'Où devons-nous livrer ?';
-      const tiles = Q.map((x, i) => html`<button type="button" class="tile q${D.quartier === x.name ? ' sel' : ''}" data-act="pick-q" data-v="${x.name}" data-vid="q${i}">${ic('pin', 26)}<span class="tt">${x.name}</span></button>`);
+      const wait = D.locState === 'wait';
+      const foot = READY.where(D) && !wait ? bigNext('wz-next', 'wiz-next', true) : '';
+      const callSel = D.quartier === CALL_ME && !D.loc;
+      /* l'équipe qui passe une commande pour un client choisit son quartier dans la liste */
+      if (NZ.role() !== 'client') {
+        const Q = ((NZ.config && NZ.config.quartiers) || []).filter((x) => !V.isGeoName(x.name));
+        return {
+          q, il: 'location', sub: 'Choisissez le quartier du client.',
+          body: html`<div class="grid2">${Q.map((x, i) => html`<button type="button" class="tile q${D.quartier === x.name ? ' sel' : ''}" data-act="pick-q" data-v="${x.name}" data-vid="q${i}">${ic('pin', 26)}<span class="tt">${x.name}</span></button>`)}
+            <button type="button" class="tile call${callSel ? ' sel' : ''}" data-act="loc-callme" data-vid="qc">${ic('phone', 28)}<span class="tt">À préciser : appeler le client</span></button></div>`,
+          foot,
+          voice: [{ t: q }].concat(Q.map((x, i) => ({ t: x.name, sel: '[data-vid="q' + i + '"]' })), [{ t: 'Ou touchez ce bouton si le quartier est à préciser par téléphone.', sel: '[data-vid="qc"]' }]),
+        };
+      }
+      const err = D.locErr ? html`<div class="err-box" style="margin-bottom:14px">${ic('alert', 26)}<div>${D.locErr}</div></div>` : '';
+      let main, voice;
+      if (wait) {
+        main = html`<div class="locbox wait"><span class="spin dark" style="width:34px;height:34px;border-width:4px"></span><b>Je cherche votre position…</b><span>Cela peut prendre quelques secondes.</span></div>`;
+        voice = [{ t: 'Je cherche votre position. Patientez quelques secondes.' }];
+      } else if (D.loc) {
+        const poor = D.loc.acc > 500;
+        const note = (D.loc.far ? 'Vous êtes loin du centre : un petit supplément s\'ajoute. ' : '') + (poor ? 'La précision est faible (environ ' + D.loc.acc + ' mètres). Pour mieux faire, sortez dehors puis touchez « Changer ma position ». Sinon, continuez : le livreur vous appellera.' : D.loc.acc ? 'Précision : environ ' + D.loc.acc + ' mètres.' : '');
+        main = html`${err}<div class="locbox ok">${ic('check', 46)}<b>Position enregistrée</b>${note ? html`<span>${note}</span>` : ''}</div>
+          <button type="button" class="btn ghost full" data-act="loc-get" data-vid="lg" style="margin-top:14px">${ic('pin', 26)}Changer ma position</button>`;
+        voice = [{ t: q }, { t: 'Votre position est enregistrée. Touchez le bouton vert Suivant pour continuer.', sel: '#wz-next' }];
+      } else {
+        main = html`<div class="lochero">${il('location', 156)}</div>${err}
+          <button type="button" class="btn primary xl full" data-act="loc-get" data-vid="lg">${ic('pin', 30)}${D.locErr ? 'Réessayer' : 'Partager ma position'}</button>`;
+        voice = [{ t: q }, { t: 'Touchez le grand bouton vert pour partager votre position. Le livreur viendra directement chez vous.', sel: '[data-vid="lg"]' }];
+      }
+      const callMe = html`<button type="button" class="btn ghost full callme${callSel ? ' sel' : ''}" data-act="loc-callme" data-vid="qc" style="margin-top:14px">${il('phone', 40)}Appelez-moi à la place</button>`;
+      if (!D.loc) voice.push({ t: 'Si votre téléphone ne trouve pas votre position, touchez ce bouton : nous vous appelons.', sel: '[data-vid="qc"]' });
       return {
-        q, sub: 'Touchez le nom de votre quartier.',
-        body: html`<div class="grid2"><button type="button" class="tile call${D.quartier === CALL_ME ? ' sel' : ''}" data-act="pick-q" data-v="${CALL_ME}" data-vid="qc">${il('phone', 52)}<span class="tt">Je ne sais pas.<br>Appelez-moi</span></button>${tiles}</div>`,
-        foot: '',
-        voice: [{ t: q }, { t: 'Si vous ne savez pas, touchez ce bouton : nous vous appelons.', sel: '[data-vid="qc"]' }].concat(Q.map((x, i) => ({ t: x.name, sel: '[data-vid="q' + i + '"]' }))),
+        q, sub: D.loc || wait ? '' : 'Le téléphone va demander la permission : touchez « Autoriser ».',
+        body: html`${main}${D.loc ? '' : callMe}`,
+        foot, voice,
       };
     },
 
@@ -397,6 +426,8 @@
 
     review(D) {
       const e = estimate(D);
+      const placeText = (d) => (d.loc ? 'Votre position (GPS)' : d.quartier === CALL_ME ? 'À préciser : nous vous appelons' : d.quartier);
+      const placeSub = (d) => (d.loc && d.loc.acc ? 'précision environ ' + d.loc.acc + ' m' : '');
       const row = (ilName, label, main, sub) => html`<div class="r">${il(ilName, 54)}<div class="rt"><small>${label}</small><b>${main}</b>${sub ? html`<span>${sub}</span>` : ''}</div></div>`;
       const rows = [];
       let say = '';
@@ -405,19 +436,19 @@
         rows.push(row(sizeOf(D).il, 'Colis', sizeOf(D).name + ' · ' + sizeOf(D).range));
         rows.push(row('from', 'Celui qui envoie', joinName(D.sender.first, D.sender.last), '+227 ' + U.fphone(D.sender.phone)));
         rows.push(row('to', 'Celui qui reçoit', joinName(D.recip.first, D.recip.last), '+227 ' + U.fphone(D.recip.phone)));
-        rows.push(row('location', 'Nous venons prendre le colis à', D.quartier));
+        rows.push(row('location', 'Nous venons prendre le colis à', placeText(D), placeSub(D)));
         say = 'Un colis ' + sizeOf(D).name.toLowerCase() + ' pour l\'agence ' + partnerName(D) + ', vers ' + D.city + '. De la part de ' + joinName(D.sender.first, D.sender.last) + ', pour ' + joinName(D.recip.first, D.recip.last) + '.';
       } else if (D.flow === 'pickup') {
         rows.push(row('agency', 'Agence', partnerName(D)));
         rows.push(row(sizeOf(D).il, 'Colis', sizeOf(D).name + ' · ' + sizeOf(D).range));
         rows.push(row('id-card', 'Carte d\'identité', 'Photo prête'));
         rows.push(row('phone', 'Votre numéro', '+227 ' + U.fphone(D.myPhone)));
-        rows.push(row('location', 'Nous apportons le colis à', D.quartier));
+        rows.push(row('location', 'Nous apportons le colis à', placeText(D), placeSub(D)));
         say = 'Nous allons chercher votre colis à l\'agence ' + partnerName(D) + ' et nous vous l\'apportons.';
       } else {
         rows.push(row('pharmacy', 'Pharmacie', partnerName(D)));
         rows.push(row(D.rxMode === 'photo' ? 'rx' : 'chat', 'Votre liste', D.rxMode === 'photo' ? 'Photo de l\'ordonnance' : cleanName(D.list).slice(0, 70)));
-        rows.push(row('location', 'Nous livrons à', D.quartier));
+        rows.push(row('location', 'Nous livrons à', placeText(D), placeSub(D)));
         say = 'Nous achetons vos médicaments à la pharmacie ' + partnerName(D) + ' et nous vous les apportons.';
       }
       const cnt = D.flow === 'pharma' ? 'Vous payez aussi les médicaments au livreur, au prix de la pharmacie.' : '';
@@ -425,7 +456,7 @@
         q: 'C\'est bon ?', sub: 'Vérifiez, puis touchez le bouton vert.',
         body: html`${errBox(D.err)}<div class="rec">${rows}</div>
           <div class="price-big"><small>${D.flow === 'pharma' ? 'Livraison' : e.quote ? 'Prix à partir de' : 'Prix de la livraison'}</small><span class="n">${U.fnum(e.total)}<u>FCFA</u></span>
-            <span class="x">${e.far ? 'dont ' + fcfa(e.farFee) + ' pour un quartier éloigné. ' : ''}${e.quote ? 'Prix confirmé par l\'équipe avant le départ. ' : ''}${e.unknown ? 'Un supplément peut s\'ajouter, confirmé par téléphone.' : ''}</span></div>
+            <span class="x">${e.far ? 'dont ' + fcfa(e.farFee) + (D.loc ? ' parce que vous êtes loin du centre. ' : ' pour un quartier éloigné. ') : ''}${e.quote ? 'Prix confirmé par l\'équipe avant le départ. ' : ''}${e.unknown ? 'Un supplément peut s\'ajouter, confirmé par téléphone.' : ''}</span></div>
           <div class="pay-row">${il('cash', 54)}<span>Vous payez le livreur.${cnt ? ' ' + cnt : ''}</span></div>
           ${NZ.company().maintenance ? html`<div class="err-box" style="margin-top:14px">${ic('alert', 26)}<div>Les commandes sont suspendues pour le moment.</div></div>` : ''}`,
         foot: html`<div class="foot"><button type="button" class="btn primary xl full" data-act="wiz-send">${ic('check', 30)}Envoyer ma commande</button></div>`,
@@ -435,11 +466,13 @@
   };
 
   let WZ = null;
+  const NBSP = String.fromCharCode(160);
+  const nbsp = (t) => (typeof t === 'string' ? t.replace(/ ([?!:;»])/g, NBSP + '$1').replace(/« /g, '«' + NBSP) : t);
   function frame(F, n, S, D) {
     const foot = S.foot !== undefined ? S.foot : bigNext('wz-next', 'wiz-next', READY[F.steps[n]](D));
     return html`<div class="wz">
       <div class="dots" aria-hidden="true">${F.steps.map((s, i) => html`<i class="${i < n ? 'done' : i === n ? 'now' : ''}"></i>`)}</div>
-      <div class="qrow">${S.il ? html`<span class="qill">${il(S.il, 74)}</span>` : ''}<div class="qtxt"><h1 class="qt">${S.q}</h1>${S.sub ? html`<p class="qs">${S.sub}</p>` : ''}</div>${VO.btn()}</div>
+      <div class="qrow">${S.il ? html`<span class="qill">${il(S.il, 74)}</span>` : ''}<div class="qtxt"><h1 class="qt">${nbsp(S.q)}</h1>${S.sub ? html`<p class="qs">${S.sub}</p>` : ''}</div>${VO.btn()}</div>
       ${S.body}${foot}</div>`;
   }
   function onBind() {
@@ -489,7 +522,38 @@
   NZ.act('pick-city', (el) => { NZ.draft.city = el.dataset.v; NZ.draft.cityOther = false; advance(); });
   NZ.act('city-other', () => { NZ.draft.cityOther = true; NZ.scrollKeep(renderStep); const i = $('input[data-bind="cityName"]'); if (i) i.focus(); });
   NZ.act('pick-size', (el) => { NZ.draft.size = el.dataset.v; advance(); });
-  NZ.act('pick-q', (el) => { NZ.draft.quartier = el.dataset.v; advance(); });
+  NZ.act('pick-q', (el) => { NZ.draft.quartier = el.dataset.v; NZ.draft.loc = null; advance(); });
+  NZ.act('loc-callme', () => { const D = NZ.draft; if (!D) return; D.quartier = CALL_ME; D.loc = null; D.locState = ''; D.locErr = ''; advance(); });
+  const GEO_ERR = {
+    1: 'La localisation est bloquée pour ce site. Autorisez-la dans les réglages du navigateur (touchez le cadenas à côté de l\'adresse), puis réessayez.',
+    2: 'Je ne trouve pas votre position. Activez la localisation (GPS) du téléphone, puis réessayez.',
+    3: 'Cela prend trop de temps. Allez dehors ou près d\'une fenêtre, puis réessayez.',
+  };
+  NZ.act('loc-get', () => {
+    const D = NZ.draft; if (!D) return;
+    const here = () => NZ.draft === D && WZ && WZ.id === 'where';
+    const fail = (msg) => { D.locState = ''; D.locErr = msg; VO.say(msg); if (here()) NZ.scrollKeep(renderStep); };
+    if (!navigator.geolocation) return fail('Ce téléphone ne permet pas de partager la position. Touchez « Appelez-moi à la place ».');
+    D.locState = 'wait'; D.locErr = ''; NZ.scrollKeep(renderStep);
+    VO.say('Je cherche votre position.');
+    const onPos = (pos) => {
+      if (!here()) { D.locState = ''; return; }
+      const c = pos.coords;
+      if (!(Math.abs(c.latitude) <= 90 && Math.abs(c.longitude) <= 180)) return fail(GEO_ERR[2]);
+      const km = V.geoKm(c.latitude, c.longitude);
+      if (km > V.GEO.outKm) return fail('Votre position n\'est pas à Agadez : nous livrons seulement à Agadez. Si vous voulez quand même commander, touchez « Appelez-moi à la place ».');
+      D.loc = { lat: +c.latitude.toFixed(6), lng: +c.longitude.toFixed(6), acc: Math.max(1, Math.round(c.accuracy || 0)), far: km > V.GEO.farKm };
+      D.quartier = D.loc.far ? V.GEO.farName : V.GEO.name;
+      D.locState = ''; D.locErr = '';
+      NZ.scrollKeep(renderStep);
+    };
+    const onErr = (err) => { if (!here()) { D.locState = ''; return; } fail(GEO_ERR[err && err.code] || GEO_ERR[2]); };
+    /* d'abord le GPS précis ; s'il n'y arrive pas (dans une maison, par exemple), la position approximative du réseau */
+    navigator.geolocation.getCurrentPosition(onPos, (err) => {
+      if (!err || err.code === 1 || !here()) return onErr(err);
+      navigator.geolocation.getCurrentPosition(onPos, onErr, { enableHighAccuracy: false, timeout: 12000, maximumAge: 120000 });
+    }, { enableHighAccuracy: true, timeout: 14000, maximumAge: 0 });
+  });
   NZ.act('rx-mode', (el) => { NZ.draft.rxMode = el.dataset.v; NZ.scrollKeep(renderStep); });
   NZ.act('pick-contact', async () => {
     const c = await K.pickContact();
@@ -510,13 +574,15 @@
     const p = { service: F.svc, client_key: D.key, pay_method: 'cash' };
     p.partner = D.partner && D.partner.id ? { id: D.partner.id } : { name: cleanName(D.partner && D.partner.name), quartier: '', details: '' };
     if (D.flow !== 'pharma') p.weight_kg = String(sizeOf(D).w);
+    const place = { quartier: D.quartier };
+    if (D.loc) place.details = V.geoText(D.loc);
     if (D.flow === 'send') {
-      p.pickup = { quartier: D.quartier, name: joinName(D.sender.first, D.sender.last), phone: D.sender.phone };
+      p.pickup = Object.assign({ name: joinName(D.sender.first, D.sender.last), phone: D.sender.phone }, place);
       p.dest = { city: D.city, name: joinName(D.recip.first, D.recip.last), phone: D.recip.phone };
     } else if (D.flow === 'pickup') {
-      p.drop = { quartier: D.quartier, phone: D.myPhone };
+      p.drop = Object.assign({ phone: D.myPhone }, place);
     } else {
-      p.drop = { quartier: D.quartier };
+      p.drop = Object.assign({}, place);
       p.desc = D.rxMode === 'photo' ? 'Ordonnance en photo (voir la discussion)' : cleanName(D.list);
     }
     return p;
