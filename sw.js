@@ -5,12 +5,12 @@
    change cette ligne, donc le navigateur installe la nouvelle version tout seul. */
 'use strict';
 
-const BUILD = '8b64598589';
+const BUILD = '224931a3ff';
 const CACHE = 'nz-static-' + BUILD;
 
 const CORE = [
-  'index.html', 'app.css', 'manifest.webmanifest',
-  'ui.js', 'core.js', 'shared.js', 'views-a.js', 'views-b.js',
+  'index.html', 'app.css', 'simple.css', 'manifest.webmanifest',
+  'ui.js', 'core.js', 'shared.js', 'voice.js', 'views-a.js', 'simple.js', 'chat.js',
   'driver.js', 'admin.js', 'admin2.js', 'boot.js'
 ];
 const EXTRA = ['icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];

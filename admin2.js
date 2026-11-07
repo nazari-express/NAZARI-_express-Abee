@@ -282,6 +282,7 @@
     'invite.create': ['Invitation créée', 'key'], 'invite.revoke': ['Invitation annulée', 'key'], 'config.set': ['Réglages modifiés', 'sliders'],
     'quartier.save': ['Quartier enregistré', 'map'], 'quartier.delete': ['Quartier supprimé', 'map'],
     'partner.save': ['Partenaire enregistré', 'bus'], 'partner.delete': ['Partenaire supprimé', 'bus'], 'announce': ['Annonce envoyée', 'mega'],
+    'id.view': ['Carte d\'identité consultée', 'eye'],
   };
   const CFG_LABEL = { price_small: 'Prix 0–5 kg', price_medium: 'Prix 5–10 kg', price_large: 'Prix 10–20 kg', price_xl: 'Prix + de 20 kg', express_fee: 'Express', far_fee: 'Zone éloignée', pharmacy_fee: 'Pharmacie' };
   const AUD = { clients: 'aux clients', drivers: 'à l\'équipe', all: 'à tout le monde' };
@@ -315,6 +316,8 @@
       out.push((d.kind === 'pharmacy' ? 'Pharmacie' : 'Agence') + (d.new ? ' ajoutée' : ' modifiée'));
     } else if (x.action === 'announce') {
       out.push('Envoyée ' + (AUD[d.audience] || '') + ' (' + d.sent + ' personne' + (d.sent > 1 ? 's' : '') + ')');
+    } else if (x.action === 'id.view') {
+      out.push(d.role === 'driver' ? 'Vue par le livreur de la course' : 'Vue par un administrateur');
     }
     return out.join(' · ');
   }

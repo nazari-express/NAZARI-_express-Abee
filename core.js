@@ -23,6 +23,9 @@
 
   /* ---------- API ---------- */
   const ENDPOINT = window.NZ_ENDPOINT || 'https://auzbestspfwjtityfucm.supabase.co/rest/v1/rpc/nz_api';
+  /* discussion, retrait avec carte d'identité : deuxième point d'entrée de la base */
+  const ENDPOINT_PLUS = ENDPOINT.replace(/nz_api$/, 'nz_plus');
+  const PLUS_RE = /^(chat|pickup|id)\./;
   const API_KEY = 'sb_publishable_e76S6aXK2Jx_nULSX9Ssxg_7qyB9TxM';
   class ApiError extends Error {
     constructor(code, message, extra) { super(message); this.code = code; Object.assign(this, extra || {}); }
@@ -35,7 +38,7 @@
     const timer = setTimeout(() => ctl.abort(), opts.timeout || 20000);
     let res;
     try {
-      res = await fetch(ENDPOINT, {
+      res = await fetch(PLUS_RE.test(action) ? ENDPOINT_PLUS : ENDPOINT, {
         method: 'POST',
         headers: { apikey: API_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ p_action: action, p_token: token, p_args: args || {} }),
@@ -124,6 +127,7 @@
   function badgeValue(id) {
     const m = NZ.me; if (!m) return 0;
     if (id === 'messages' || id === 'bell') return m.unread || 0;
+    if (id === 'chat') return NZ.chatUnread || 0;
     if (id === 'orders') return (m.counts && m.counts.new) || 0;
     if (id === 'courses') return (m.counts && m.counts.available) || 0;
     return 0;
@@ -197,7 +201,8 @@
   const TABS = {
     client: [
       { id: 'home', label: 'Accueil', icon: 'home', href: '#/' },
-      { id: 'messages', label: 'Messages', icon: 'chat', href: '#/messages' },
+      { id: 'mine', label: 'Mes colis', icon: 'box', href: '#/orders' },
+      { id: 'chat', label: 'Discussion', icon: 'chat', href: '#/chat' },
       { id: 'account', label: 'Compte', icon: 'user', href: '#/account' },
     ],
     driver: [
@@ -207,8 +212,8 @@
     ],
     admin: [
       { id: 'orders', label: 'Commandes', icon: 'list', href: '#/admin' },
+      { id: 'chat', label: 'Discussions', icon: 'chat', href: '#/admin/chats' },
       { id: 'stats', label: 'Tableau', icon: 'chart', href: '#/admin/stats' },
-      { id: 'messages', label: 'Messages', icon: 'chat', href: '#/messages' },
       { id: 'more', label: 'Plus', icon: 'sliders', href: '#/admin/more' },
     ],
   };
@@ -218,15 +223,15 @@
     let left = '';
     if (o.backAct) left = html`<button type="button" class="icon-btn" data-act="${o.backAct}" aria-label="Retour">${ic('back')}</button>`;
     else if (o.back) left = html`<a class="icon-btn" href="${o.back}" aria-label="Retour">${ic('back')}</a>`;
-    else if (o.brand && u) left = html`<button type="button" class="icon-btn" data-act="open-menu" aria-label="Ouvrir le menu">${ic('menu')}</button>`;
+    else if (o.brand && u && o.menu !== false) left = html`<button type="button" class="icon-btn" data-act="open-menu" aria-label="Ouvrir le menu">${ic('menu')}</button>`;
     const mid = o.brand
       ? html`<div class="t-brand"><div class="wm"><svg class="logo" width="30" height="24" aria-hidden="true"><use href="#logo-mark"/></svg><span>${a}${b ? html`<b>${b}</b>` : ''}</span></div><small>${NZ.company().tagline}</small></div>`
       : html`<h1 class="t-title">${o.title}</h1>`;
-    const right = o.brand
-      ? html`<a class="icon-btn" href="#/messages" aria-label="Messages">${ic('bell')}<span class="badge" data-badge="bell" hidden></span></a>`
-      : (o.right || (o.back ? '' : ''));
+    const right = o.right !== undefined ? o.right
+      : o.brand ? html`<a class="icon-btn" href="#/messages" aria-label="Notifications">${ic('bell')}<span class="badge" data-badge="bell" hidden></span></a>` : '';
     const spacer = o.brand && !left ? html`<span style="width:44px"></span>` : '';
-    return html`<header class="topbar">${left}${spacer}${mid}${right}</header>`;
+    const spacerR = o.brand && right === '' ? html`<span style="width:44px"></span>` : '';
+    return html`<header class="topbar">${left}${spacer}${mid}${right}${spacerR}</header>`;
   }
   function tabsHtml(active) {
     const set = TABS[NZ.role()] || TABS.client;
@@ -246,11 +251,9 @@
     const wa = NZ.waHref('Bonjour ' + NZ.company().name + ', ');
     const items = role === 'client' || !role ? [
       menuLink('#/', 'home', 'Accueil'),
-      menuLink('#/new', 'plus', 'Nouvelle commande'),
-      menuLink('#/orders', 'box', 'Mes commandes'),
-      menuLink('#/track', 'pin', 'Suivre une commande'),
+      menuLink('#/orders', 'box', 'Mes colis'),
+      menuLink('#/chat', 'chat', 'Discussion'),
       menuLink('#/tarifs', 'tag', 'Nos tarifs'),
-      menuLink('#/addresses', 'map', 'Mes adresses'),
       menuLink('#/help', 'help', 'Aide et questions'),
       menuLink('#/about', 'info', 'À propos'),
     ] : [
@@ -293,6 +296,7 @@
     const alive = () => my === gen;
     U.closeOverlay(); closeMenu(); stopPolls();
     NZ.bindTarget = null; NZ.onBind = null;
+    NZ.emit('route');
     let { path, query } = parseHash();
     const hit = find(path) || find('/404');
     const r = hit.r;
@@ -310,7 +314,7 @@
         if (!alive()) return null;
         o = o || {};
         const tabs = o.tab && NZ.session;
-        app().innerHTML = str(html`<div class="shell">${topbar(o)}<main id="main" class="${o.flush ? 'flush' : ''}${tabs ? '' : ' no-tabs'}" tabindex="-1">${o.skeleton === false ? '' : U.skeleton(3)}</main>${tabs ? tabsHtml(o.tab) : ''}</div>`);
+        app().innerHTML = str(html`<div class="shell${o.cls ? ' ' + o.cls : ''}">${topbar(o)}<main id="main" class="${o.flush ? 'flush' : ''}${tabs ? '' : ' no-tabs'}" tabindex="-1">${o.skeleton === false ? '' : U.skeleton(3)}</main>${tabs ? tabsHtml(o.tab) : ''}</div>`);
         paintBadges();
         window.scrollTo(0, 0);
         document.title = (o.title ? o.title + ' · ' : '') + NZ.company().name;

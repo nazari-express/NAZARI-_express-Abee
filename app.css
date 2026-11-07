@@ -293,7 +293,7 @@ select.input { background-image: linear-gradient(45deg, transparent 50%, #5b6b62
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { transform: translateY(40px); opacity: 0; } }
 @keyframes slide { from { transform: translateX(-30px); opacity: 0; } }
-.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 12px); transform: translateX(-50%); z-index: 120; max-width: min(440px, calc(100% - 32px)); padding: 12px 18px; background: #12261a; color: #fff; border-radius: 14px; font-weight: 600; font-size: 14.5px; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); animation: drop 0.2s ease; text-align: center; pointer-events: none; }
+.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 72px); transform: translateX(-50%); z-index: 120; width: max-content; max-width: min(440px, calc(100% - 32px)); padding: 12px 18px; background: #12261a; color: #fff; border-radius: 14px; font-weight: 600; font-size: 14.5px; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); animation: drop 0.2s ease; text-align: center; pointer-events: none; }
 @keyframes drop { from { opacity: 0; transform: translate(-50%, -12px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .toast.err { background: #8c1d17; }
 .toast.ok { background: var(--green-d); }

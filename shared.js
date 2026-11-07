@@ -154,6 +154,23 @@
     return html`${sel}${oth}`;
   };
 
+  /* ---------- carte d'identité du client (retrait d'un colis à l'agence) ----------
+     opts.can : le bouton est affiché ; sinon opts.why explique pourquoi la carte n'est pas visible */
+  V.idCardBox = function (o, opts) {
+    opts = opts || {};
+    if (!o || o.service !== 'agency_pickup') return '';
+    if (!opts.can) return opts.why ? html`<div class="notice">${ic('lock', 18)}<div>${opts.why}</div></div>` : '';
+    return html`<div class="card"><div class="h2" style="margin-bottom:6px">Carte d'identité du client</div>
+      <p class="muted small" style="margin:0 0 12px">Elle sert à retirer le colis à l'agence. ${opts.note || ''}</p>
+      ${btn({ label: 'Voir la carte d\'identité', kind: 'primary', full: true, size: 'lg', icon: 'image', act: 'id-view', id: o.id })}</div>`;
+  };
+  NZ.act('id-view', (el) => U.busy(el, async () => {
+    try {
+      const r = await NZ.api('id.get', { order_id: el.dataset.id });
+      if (NZ.kit && NZ.kit.viewPhoto) NZ.kit.viewPhoto(r.img, 'Carte d\'identité');
+    } catch (e) { U.toast(e.message, 'err'); }
+  }));
+
   /* ---------- messages d'erreur de formulaire ---------- */
   V.errBox = (msg) => (msg ? html`<div class="notice bad" role="alert" style="margin-bottom:14px">${ic('alert', 20)}<div>${msg}</div></div>` : '');
 })((window.NZ = window.NZ || {}));

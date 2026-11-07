@@ -95,6 +95,8 @@
         ${flags.length ? html`<div class="actions" style="margin-top:10px">${flags.map((f) => html`<span class="chip warn">${f}</span>`)}</div>` : ''}
         ${V.callRow(c.phone, 'Bonjour ' + c.name + ', ' + NZ.company().name + ' au sujet de votre commande ' + o.code + ' : ', 'Appeler le client')}</div>
 
+      ${V.idCardBox(o, { can: true, note: 'Chaque consultation est notée dans le journal d\'activité.' })}
+
       ${next.length || !['delivered', 'cancelled'].includes(o.status) ? html`<div class="card"><div class="h2" style="margin-bottom:10px">Étape suivante</div>
         <div class="stack">${next.map(([st, label, icon, kind]) => btn({ label, kind, full: true, size: 'lg', icon, act: 'ao-status', data: { st } }))}
         ${!['delivered', 'cancelled'].includes(o.status) ? btn({ label: 'Annuler la commande', kind: 'danger', full: true, act: 'ao-cancel' }) : ''}</div></div>` : ''}
@@ -222,6 +224,7 @@
     ctx.main(html`<div class="stack">
       ${!NZ.company().whatsapp ? html`<a href="#/admin/config" style="display:block">${V.notice('Numéro WhatsApp à renseigner dans « Tarifs et réglages ».', 'warn')}</a>` : ''}
       <div class="list">
+        ${row({ icon: 'bell', title: 'Notifications', sub: 'Nouvelles commandes, courses, annonces', href: '#/messages' })}
         ${row({ icon: 'sliders', title: 'Tarifs et réglages', sub: 'Prix, WhatsApp, maintenance', href: '#/admin/config' })}
         ${row({ icon: 'map', title: 'Quartiers', sub: 'Zones et suppléments', href: '#/admin/zones' })}
         ${row({ icon: 'bus', title: 'Agences et pharmacies', sub: 'Partenaires de livraison', href: '#/admin/partners' })}

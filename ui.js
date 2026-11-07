@@ -81,7 +81,18 @@
     map: '<path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/>',
     key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M16 7l3 3M14 9l2 2"/>',
     toggle: '<rect x="2.5" y="7" width="19" height="10" rx="5"/><circle cx="16.5" cy="12" r="2.6"/>',
+    del: '<path d="M21 5H9l-6 7 6 7h12z"/><path d="m13 9.5 5 5M18 9.5l-5 5"/>',
+    vol: '<path d="M4 9.5v5h3.5l5 4v-13l-5 4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',
+    mute: '<path d="M4 9.5v5h3.5l5 4v-13l-5 4z"/><path d="m16.5 9.5 5 5M21.5 9.5l-5 5"/>',
+    camera: '<path d="M4 8h3l1.5-2.5h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/>',
+    image: '<rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m4 17 5-4.5 3.5 3L15 13.5l5 4.5"/>',
+    book: '<path d="M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3z"/><circle cx="12" cy="10" r="2.2"/><path d="M8.5 15.5c.7-1.4 1.9-2 3.5-2s2.8.6 3.5 2"/>',
   };
+  /* dessin du sprite (tools/illus.py) : <svg class="il"><use href="#il-xxx"/></svg> */
+  function il(name, size, cls) {
+    const s = size || 64;
+    return raw('<svg class="il ' + (cls || '') + '" width="' + s + '" height="' + s + '" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><use href="#il-' + name + '"/></svg>');
+  }
   function ic(name, size, cls) {
     return raw('<svg class="ic ' + (cls || '') + '" width="' + (size || 22) + '" height="' + (size || 22) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[name] || '') + '</svg>');
   }
@@ -337,5 +348,5 @@
     } catch (e) { /* silencieux */ }
   }
 
-  NZ.ui = { RAW, raw, esc, html, str, ic, P, fnum, fcfa, fphone, ftime, fdate, fwhen, initials, SERVICE, STATUS, TIERS, tierOf, statusChip, waLink, telLink, btn, field, empty, skeleton, row, setPath, getPath, formData, toast, openOverlay, closeOverlay, confirmBox, busy, copyText, beep };
+  NZ.ui = { RAW, raw, esc, html, str, ic, il, P, fnum, fcfa, fphone, ftime, fdate, fwhen, initials, SERVICE, STATUS, TIERS, tierOf, statusChip, waLink, telLink, btn, field, empty, skeleton, row, setPath, getPath, formData, toast, openOverlay, closeOverlay, confirmBox, busy, copyText, beep };
 })((window.NZ = window.NZ || {}));

@@ -27,6 +27,33 @@
 
   setInterval(() => { if (!document.hidden && NZ.session) NZ.refreshMe(); }, 20000);
 
+  /* discussion : pastille « nouveau message » et alerte (toutes les 20 s, très léger) */
+  const onChatPage = () => /^#\/(chat|admin\/chat\/)/.test(location.hash);
+  async function peekChat() {
+    if (document.hidden || !NZ.session) return;
+    const role = NZ.role();
+    if (role !== 'client' && role !== 'admin') return;
+    try {
+      const r = await NZ.api('chat.peek', {}, { timeout: 8000, retry: 0 });
+      if (role === 'admin') {
+        const was = NZ.chatLastIn;
+        NZ.chatUnread = r.waiting || 0;
+        NZ.chatLastIn = r.last_in || 0;
+        if (was !== undefined && NZ.chatLastIn > was && !onChatPage()) { U.beep(); U.toast('Nouveau message d\'un client', 'ok'); }
+      } else {
+        const was = NZ.chatLastTeam;
+        const seen = NZ.store.get('nz.chat.seen', 0);
+        NZ.chatUnread = (r.last_team || 0) > seen ? 1 : 0;
+        NZ.chatLastTeam = r.last_team || 0;
+        if (was !== undefined && NZ.chatLastTeam > was && !onChatPage()) { U.beep(); U.toast('Nouveau message de ' + NZ.company().name, 'ok'); }
+      }
+      NZ.paintBadges();
+    } catch (e) { /* pas grave : on réessaie dans 20 s */ }
+  }
+  NZ.peekChat = peekChat;
+  setInterval(peekChat, 20000);
+  NZ.on('route', () => { if (NZ.session) setTimeout(peekChat, 1500); });
+
   /* réglages (tarifs, quartiers, agences, maintenance, WhatsApp) : rechargés au plus toutes les 60 s */
   let cfgAt = Date.now();
   const freshConfig = (force) => {
