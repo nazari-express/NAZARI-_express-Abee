@@ -18,17 +18,17 @@
     const who = m.team && (!right || CH.staff) ? (m.by || NZ.company().name) : '';
     const ph = m.photo ? (PHOTOS[m.id]
       ? html`<img class="cph" src="${PHOTOS[m.id]}" alt="Photo" data-act="chat-zoom" data-id="${m.id}">`
-      : html`<button type="button" class="phbtn" data-act="chat-photo" data-id="${m.id}">${il('photo', 38)}Voir la photo</button>`) : '';
+      : html`<button type="button" class="phbtn" data-act="chat-photo" data-id="${m.id}">${il('photo', 32)}Voir la photo</button>`) : '';
     return html`<div class="bub${right ? ' me' : ''}" data-mid="${m.id}">${who && !right ? html`<span class="who">${who}</span>` : ''}${m.order_code ? html`<span class="ord">${m.order_code}</span>` : ''}${ph}${m.text ? html`<span>${m.text}</span>` : ''}<span class="tm">${fwhen(m.at)}</span></div>`;
   }
   function quick() {
     const q = (icon, t) => html`<button type="button" data-act="chat-quick" data-t="${t}">${il(icon, 46)}<span>${t}</span></button>`;
-    return html`<div class="chat-empty"><div style="text-align:center">${il('chat', 130)}<div style="font-size:21px;font-weight:800;margin:4px 0 2px;color:var(--forest)">Écrivez-nous ici</div><div style="color:var(--cl-soft);font-weight:600;font-size:16px">Nous répondons dès que possible.</div></div>
+    return html`<div class="chat-empty"><div style="text-align:center">${il('chat', 100)}<div style="font-size:21px;font-weight:800;margin:4px 0 2px;color:var(--forest)">Écrivez-nous ici</div><div style="color:var(--cl-soft);font-weight:600;font-size:16px">Nous répondons dès que possible.</div></div>
       <div class="quick">${q('parcel', 'Où est mon colis ?')}${q('phone', 'Merci de me rappeler')}${q('error', 'J\'ai un problème')}</div></div>`;
   }
   function listHtml() {
     CH.items = CH.items.filter(alive);
-    const note = html`<div class="chat-note">${il('clock', 36)}<span>${CH.staff ? 'Les messages et les photos disparaissent après 24 heures.' : 'Les messages et les photos disparaissent après 24 heures.'}</span></div>`;
+    const note = html`<div class="chat-note">${il('clock', 30)}<span>${CH.staff ? 'Les messages et les photos disparaissent après 24 heures.' : 'Les messages et les photos disparaissent après 24 heures.'}</span></div>`;
     if (!CH.items.length) return html`${note}${CH.staff ? html`<p class="muted center" style="padding:30px 0">Aucun message.</p>` : quick()}`;
     return html`${note}${CH.items.map(bubble)}`;
   }

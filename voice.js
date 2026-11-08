@@ -215,8 +215,8 @@
   NZ.kit.photoButtons = function (key, o) {
     o = o || {};
     return html`<div class="pbtns">
-      <label class="pbtn cam"><input type="file" accept="image/*" capture="environment" hidden data-photo="${key}">${U.il('camera', 56)}<span>${o.cam || 'Prendre la photo'}</span></label>
-      <label class="pbtn gal"><input type="file" accept="image/*" hidden data-photo="${key}">${U.il('photo', 56)}<span>${o.gal || 'Ma galerie'}</span></label></div>`;
+      <label class="pbtn cam"><input type="file" accept="image/*" capture="environment" hidden data-photo="${key}">${U.il('camera', 44)}<span>${o.cam || 'Prendre la photo'}</span></label>
+      <label class="pbtn gal"><input type="file" accept="image/*" hidden data-photo="${key}">${U.il('photo', 44)}<span>${o.gal || 'Ma galerie'}</span></label></div>`;
   };
 
   /* =====================================================================

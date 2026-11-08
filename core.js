@@ -211,9 +211,9 @@
       { id: 'account', label: 'Compte', icon: 'user', href: '#/account' },
     ],
     admin: [
-      { id: 'orders', label: 'Commandes', icon: 'list', href: '#/admin' },
+      { id: 'home', label: 'Accueil', icon: 'home', href: '#/admin' },
+      { id: 'orders', label: 'Commandes', icon: 'list', href: '#/admin/orders' },
       { id: 'chat', label: 'Discussions', icon: 'chat', href: '#/admin/chats' },
-      { id: 'stats', label: 'Tableau', icon: 'chart', href: '#/admin/stats' },
       { id: 'more', label: 'Plus', icon: 'sliders', href: '#/admin/more' },
     ],
   };
@@ -256,10 +256,13 @@
       menuLink('#/tarifs', 'tag', 'Nos tarifs'),
       menuLink('#/help', 'help', 'Aide et questions'),
       menuLink('#/about', 'info', 'À propos'),
+      menuLink('#/share', 'share', 'Partager l\'application'),
     ] : [
-      menuLink(NZ.homeHash(), 'home', role === 'admin' ? 'Commandes' : 'Courses'),
+      menuLink(NZ.homeHash(), 'home', role === 'admin' ? 'Accueil' : 'Courses'),
+      ...(role === 'admin' ? [menuLink('#/admin/orders', 'list', 'Commandes')] : []),
       menuLink('#/new', 'plus', 'Passer une commande'),
       menuLink('#/messages', 'chat', 'Messages'),
+      menuLink('#/share', 'share', 'Partager l\'application'),
       menuLink('#/account', 'user', 'Mon compte'),
     ];
     const el = document.createElement('div');

@@ -154,9 +154,29 @@
         <div class="muted" style="margin-top:4px">${co.tagline}</div>
         <div class="chip plain" style="margin-top:12px">Version ${NZ.VERSION}</div></div>
       <div class="card"><p>${co.name} livre vos colis, vos envois vers les agences de transport et vos médicaments de pharmacie partout à Agadez, de la porte du client à la porte du destinataire.</p>
-        <p class="muted" style="margin-top:10px">Un service fait à Agadez, pour Agadez.</p></div>
+        <p class="muted" style="margin-top:10px">Un service fait à Agadez, pour Agadez. Ensemble pour une Agadez plus connectée !</p>
+        <p style="margin-top:10px;font-weight:700;color:var(--green-d)">Votre satisfaction, notre priorité !</p></div>
       ${wa ? btn({ label: 'Nous écrire sur WhatsApp', href: wa, kind: 'wa', full: true, icon: 'wa' }) : ''}</div>`);
   }, { public: true });
+
+  /* =====================================================================
+     Partager l'application : code QR, lien, WhatsApp
+     ===================================================================== */
+  const appUrl = () => location.origin + location.pathname.replace(/index\.html$/, '');
+  NZ.appUrl = appUrl;
+  NZ.route('/share', (ctx) => {
+    publicShell(ctx, 'Partager l\'application', 'account');
+    const url = appUrl(), co = NZ.company();
+    const msg = co.name + ' : livraison de colis et de médicaments à Agadez, dès 1 000 FCFA. Ouvre l\'application ici : ' + url;
+    ctx.main(html`<div class="stack">
+      <div class="card center shr-card"><div class="shr-qr" data-vid="share-qr">${V.qrSvg(url, 'Code QR : ouvrir ' + co.name)}</div>
+        <div class="shr-t">Scannez pour ouvrir ${co.name}</div>
+        <div class="shr-u" data-vid="share-url">${url.replace(/^https?:\/\//, '')}</div></div>
+      ${btn({ label: 'Envoyer sur WhatsApp', href: 'https://wa.me/?text=' + encodeURIComponent(msg), kind: 'wa', full: true, size: 'lg', icon: 'wa' })}
+      ${btn({ label: 'Copier le lien', kind: 'ghost', full: true, icon: 'copy', act: 'share-copy' })}
+      <p class="small muted center">Plus qu'une livraison, un service de confiance !</p></div>`);
+  }, { public: true });
+  NZ.act('share-copy', () => U.copyText(appUrl()));
 
   /* =====================================================================
      Suivi public : numéro de commande + téléphone
@@ -267,6 +287,7 @@
       <div class="list">
         ${staffRows}
         ${row({ icon: 'bell', title: 'Notifications', sub: 'Mes alertes', href: '#/messages' })}
+        ${row({ icon: 'share', title: 'Partager l\'application', sub: 'Code QR et lien WhatsApp', href: '#/share' })}
         ${installable ? row({ icon: 'download', title: 'Installer l\'application', sub: 'L\'ajouter à l\'écran d\'accueil', act: 'install-app', noArrow: true }) : ''}
         ${row({ icon: 'help', title: 'Aide et questions', sub: 'Questions fréquentes', href: '#/help' })}
         ${row({ icon: 'info', title: 'À propos', sub: NZ.company().name + ' v' + NZ.VERSION, href: '#/about' })}

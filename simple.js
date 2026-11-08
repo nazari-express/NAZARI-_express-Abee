@@ -30,11 +30,12 @@
     ctx.plain(html`<div class="shell cl"><div class="land">
       <svg class="scene" aria-hidden="true" preserveAspectRatio="xMidYMax slice"><use href="#scene-splash" width="100%" height="100%"/></svg><div class="veil"></div>
       <div class="top"><svg class="logo" aria-hidden="true"><use href="#logo-mark"/></svg><div class="wm">${a}${b ? html`<b>${b}</b>` : ''}</div><div class="tag">${NZ.company().tagline}</div><div class="where">${ic('pin', 18)}Agadez</div></div>
-      <div class="lhero" aria-hidden="true"><div class="lbadge">${il('send', 200)}</div></div>
+      <div class="lhero" aria-hidden="true"><div class="lbadge">${il('send', 170)}</div></div>
       <div class="sheet2">
         <div class="hi"><h1>Bienvenue !</h1>${VO.btn()}</div>
-        <button type="button" class="btn primary xl full" data-act="au-start" data-mode="login" data-vid="l1">${il('lock', 46)}J'ai un compte</button>
-        <button type="button" class="btn ghost xl full" data-act="au-start" data-mode="register" data-vid="l2">${il('hello', 46)}Je suis nouveau</button>
+        <p class="slog">Plus qu'une livraison, un service de confiance !</p>
+        <button type="button" class="btn primary xl full" data-act="au-start" data-mode="login" data-vid="l1">${il('lock', 36)}J'ai un compte</button>
+        <button type="button" class="btn ghost xl full" data-act="au-start" data-mode="register" data-vid="l2">${il('hello', 36)}Je suis nouveau</button>
         <div class="mini"><a href="#/track">Suivre un colis</a><a href="#/staff">Équipe Nazari</a></div>
       </div></div></div>`);
     VO.screen(() => [
@@ -48,7 +49,7 @@
   function phoneScreen(ctx, o) {
     ctx.shell({ title: o.title, back: o.back, cls: 'cl', skeleton: false });
     ctx.main(html`<div>
-      <div class="qrow"><span class="qill">${il('phone', 78)}</span><div class="qtxt"><h1 class="qt">${o.q}</h1></div>${VO.btn()}</div>
+      <div class="qrow"><span class="qill">${il('phone', 56)}</span><div class="qtxt"><h1 class="qt">${o.q}</h1></div>${VO.btn()}</div>
       ${errBox(AU.err)}
       ${K.keypad({ kind: 'phone', value: AU.phone, onChange: (v) => { AU.phone = v; setReady('au-next', v.length === 8); } })}
       ${bigNext('au-next', 'au-next', AU.phone.length === 8)}
@@ -67,11 +68,11 @@
     ctx.shell({ title: o.title, back: o.back, cls: 'cl', skeleton: false });
     const wa = NZ.waHref('Bonjour, j\'ai oublié mon code secret Nazari Express. Mon numéro : ' + AU.phone);
     ctx.main(html`<div>
-      <div class="qrow"><span class="qill">${il('lock', 78)}</span><div class="qtxt"><h1 class="qt">${o.q}</h1>${o.sub ? html`<p class="qs">${o.sub}</p>` : ''}</div>${VO.btn()}</div>
+      <div class="qrow"><span class="qill">${il('lock', 56)}</span><div class="qtxt"><h1 class="qt">${o.q}</h1>${o.sub ? html`<p class="qs">${o.sub}</p>` : ''}</div>${VO.btn()}</div>
       ${errBox(AU.err)}
       ${K.keypad({ kind: 'pin', value: '', min: 4, max: o.max || 8, onChange: (v) => { setReady('au-go', v.length >= 4); } })}
       <div class="foot"><button type="button" class="btn primary xl full" id="au-go" data-act="${o.act}" disabled>${o.label}${ic('next', 28)}</button>
-        ${o.random ? html`<button type="button" class="btn ghost xl full" data-act="au-random">${il('hello', 40)}Choisissez pour moi</button>` : ''}
+        ${o.random ? html`<button type="button" class="btn ghost xl full" data-act="au-random">${il('hello', 32)}Choisissez pour moi</button>` : ''}
         ${o.forgot && wa ? html`<a class="link-big" href="${wa}" target="_blank" rel="noopener noreferrer">J'ai oublié mon code</a>` : ''}</div>
     </div>`);
     VO.screen(() => [{ t: o.q }, { t: o.say }]);
@@ -127,7 +128,7 @@
     if (!ph8(AU.phone) || AU.pin.length !== 4) return NZ.go('/register', { replace: true });
     ctx.shell({ title: 'Votre code secret', back: '#/register/pin', cls: 'cl', skeleton: false });
     ctx.main(html`<div>
-      <div class="qrow"><span class="qill">${il('lock', 78)}</span><div class="qtxt"><h1 class="qt">Votre code secret</h1></div>${VO.btn()}</div>
+      <div class="qrow"><span class="qill">${il('lock', 56)}</span><div class="qtxt"><h1 class="qt">Votre code secret</h1></div>${VO.btn()}</div>
       ${errBox(AU.err)}
       <div class="code-big" aria-label="Votre code secret">${AU.pin.split('').map((d) => html`<span>${d}</span>`)}</div>
       <div class="note-soft" style="margin-top:0">${ic('info', 24)}<span>Notez ces 4 chiffres ou prenez une photo de l'écran. Vous en aurez besoin pour vous connecter.</span></div>
@@ -172,15 +173,15 @@
 
   function orderCard(o) {
     const st = ST[o.status] || ST.received;
-    return html`<a class="oc" href="#/order/${o.id}" data-vid="o-${o.id}"><span class="oi">${il(st.il, 64)}</span>
+    return html`<a class="oc" href="#/order/${o.id}" data-vid="o-${o.id}"><span class="oi">${il(st.il, 46)}</span>
       <span class="ob"><span class="ot">${orderTitle(o)}</span><span class="os">${orderSub(o)}</span><span class="ost ${st.cls}">${st.t}</span></span>
       <span class="op">${priceShort(o)}</span></a>`;
   }
   function services(P) {
     return html`
-      <button type="button" class="svc g" data-act="start" data-flow="send" data-vid="h1"><span class="ilbox">${il('send', 92)}</span><span class="st"><b>Envoyer un colis</b><small>à l'agence de transport</small><em>dès ${fcfa(P.small)}</em></span>${ic('chev', 28)}</button>
-      <button type="button" class="svc t" data-act="start" data-flow="pickup" data-vid="h2"><span class="ilbox">${il('pickup', 92)}</span><span class="st"><b>Récupérer un colis</b><small>arrivé à l'agence</small><em>dès ${fcfa(P.small)}</em></span>${ic('chev', 28)}</button>
-      <button type="button" class="svc b" data-act="start" data-flow="pharma" data-vid="h3"><span class="ilbox">${il('pharmacy', 92)}</span><span class="st"><b>Pharmacie</b><small>vos médicaments chez vous</small><em>dès ${fcfa(P.pharmacy)}</em></span>${ic('chev', 28)}</button>`;
+      <button type="button" class="svc g" data-act="start" data-flow="send" data-vid="h1"><span class="ilbox">${il('send', 62)}</span><span class="st"><b>Envoyer un colis</b><small>à l'agence de transport</small><em>dès ${fcfa(P.small)}</em></span>${ic('chev', 24)}</button>
+      <button type="button" class="svc t" data-act="start" data-flow="pickup" data-vid="h2"><span class="ilbox">${il('pickup', 62)}</span><span class="st"><b>Récupérer un colis</b><small>arrivé à l'agence</small><em>dès ${fcfa(P.small)}</em></span>${ic('chev', 24)}</button>
+      <button type="button" class="svc b" data-act="start" data-flow="pharma" data-vid="h3"><span class="ilbox">${il('pharmacy', 62)}</span><span class="st"><b>Pharmacie</b><small>vos médicaments chez vous</small><em>dès ${fcfa(P.pharmacy)}</em></span>${ic('chev', 24)}</button>`;
   }
   function homeView(hello) {
     const P = NZ.prices(), co = NZ.company();
@@ -284,21 +285,21 @@
     const list = partners(kind);
     const q = isPh ? 'Quelle pharmacie ?' : D.flow === 'send' ? 'Quelle agence de transport ?' : 'Dans quelle agence est votre colis ?';
     const showOther = D.other || list.length === 0;
-    const tiles = list.map((p, i) => html`<button type="button" class="tile${D.partner && D.partner.id === p.id ? ' sel' : ''}" data-act="pick-partner" data-id="${p.id}" data-vid="p${i}">${il(isPh ? 'pharmacy' : 'agency', 76)}<span class="tt">${p.name}</span>${p.quartier ? html`<span class="ts">${p.quartier}</span>` : ''}</button>`);
+    const tiles = list.map((p, i) => html`<button type="button" class="tile${D.partner && D.partner.id === p.id ? ' sel' : ''}" data-act="pick-partner" data-id="${p.id}" data-vid="p${i}">${il(isPh ? 'pharmacy' : 'agency', 48)}<span class="tt">${p.name}</span>${isPh && p.quartier ? html`<span class="ts">${p.quartier}</span>` : ''}</button>`);
     const other = showOther
-      ? html`<div class="card-who" style="margin-top:16px">${U.field({ label: isPh ? 'Nom de la pharmacie' : 'Nom de l\'agence', bind: 'partnerName', value: D.partnerName, maxlength: 60, placeholder: isPh ? 'Ex. Pharmacie du Marché' : 'Ex. Rimbo Transport' })}</div>`
-      : html`<button type="button" class="tile other" data-act="partner-other" style="margin-top:16px;width:100%;min-height:76px;flex-direction:row" data-vid="po">${ic('plus', 30)}<span class="tt">${isPh ? 'Une autre pharmacie' : 'Une autre agence'}</span></button>`;
+      ? html`<div class="card-who" style="margin-top:12px">${U.field({ label: isPh ? 'Nom de la pharmacie' : 'Nom de l\'agence', bind: 'partnerName', value: D.partnerName, maxlength: 60, placeholder: isPh ? 'Ex. Pharmacie du Marché' : 'Ex. Rimbo Transport' })}</div>`
+      : html`<button type="button" class="tile other" data-act="partner-other" style="margin-top:12px;width:100%;min-height:56px;flex-direction:row" data-vid="po">${ic('plus', 26)}<span class="tt">${isPh ? 'Une autre pharmacie' : 'Une autre agence'}</span></button>`;
     return {
       q, body: html`<div class="${list.length > 1 ? 'grid2' : 'grid1'}">${tiles}</div>${other}`,
       foot: showOther ? bigNext('wz-next', 'wiz-next', READY[isPh ? 'pharmacy' : 'agency'](D)) : '',
-      voice: [{ t: q }].concat(list.map((p, i) => ({ t: p.name + (p.quartier ? ', ' + p.quartier : ''), sel: '[data-vid="p' + i + '"]' })), [{ t: showOther ? 'Ou écrivez le nom ici.' : (isPh ? 'Ou une autre pharmacie.' : 'Ou une autre agence.'), sel: showOther ? null : '[data-vid="po"]' }]),
+      voice: [{ t: q }].concat(list.map((p, i) => ({ t: p.name + (isPh && p.quartier ? ', ' + p.quartier : ''), sel: '[data-vid="p' + i + '"]' })), [{ t: showOther ? 'Ou écrivez le nom ici.' : (isPh ? 'Ou une autre pharmacie.' : 'Ou une autre agence.'), sel: showOther ? null : '[data-vid="po"]' }]),
     };
   }
   function whoStep(D, side, q, sayText) {
     const P = D[side];
     return {
       q, il: side === 'sender' ? 'from' : 'to',
-      body: html`${side === 'recip' && K.canContacts ? html`<button type="button" class="btn ghost full contact-btn" data-act="pick-contact">${il('contacts', 44)}Choisir dans mes contacts</button>` : ''}
+      body: html`${side === 'recip' && K.canContacts ? html`<button type="button" class="btn ghost full contact-btn" data-act="pick-contact">${il('contacts', 34)}Choisir dans mes contacts</button>` : ''}
         <div class="card-who">
           ${U.field({ label: 'Prénom', bind: side + '.first', value: P.first, autocomplete: 'given-name', maxlength: 30 })}
           ${U.field({ label: 'Nom', bind: side + '.last', value: P.last, autocomplete: 'family-name', maxlength: 30 })}
@@ -321,7 +322,7 @@
       const tiles = cities.map((c, i) => html`<button type="button" class="tile q${D.city === c ? ' sel' : ''}" data-act="pick-city" data-v="${c}" data-vid="c${i}">${ic('pin', 26)}<span class="tt">${c}</span></button>`);
       const other = showOther
         ? html`<div class="card-who" style="margin-top:16px">${U.field({ label: 'Nom de la ville', bind: 'cityName', value: D.cityName, maxlength: 40 })}</div>`
-        : html`<button type="button" class="tile other" data-act="city-other" style="margin-top:16px;width:100%;min-height:68px;flex-direction:row" data-vid="co">${ic('plus', 28)}<span class="tt">Une autre ville</span></button>`;
+        : html`<button type="button" class="tile other" data-act="city-other" style="margin-top:12px;width:100%;min-height:52px;flex-direction:row" data-vid="co">${ic('plus', 24)}<span class="tt">Une autre ville</span></button>`;
       return {
         q, body: html`<div class="grid2">${tiles}</div>${other}`,
         foot: showOther ? bigNext('wz-next', 'wiz-next', READY.city(D)) : '',
@@ -332,7 +333,7 @@
     size(D) {
       const P = NZ.prices();
       const q = 'Quelle est la taille du colis ?';
-      const tiles = SIZES.map((s, i) => html`<button type="button" class="tile size${D.size === s.key ? ' sel' : ''}" data-act="pick-size" data-v="${s.key}" data-vid="s${i}">${il(s.il, 136)}<span class="tt">${s.name}</span><span class="ts">${s.range}</span><span class="tp">${s.key === 'xl' ? html`dès ${fcfa(P.xl)}` : fcfa(P[s.key])}</span></button>`);
+      const tiles = SIZES.map((s, i) => html`<button type="button" class="tile size${D.size === s.key ? ' sel' : ''}" data-act="pick-size" data-v="${s.key}" data-vid="s${i}">${il(s.il, 96)}<span class="tt">${s.name}</span><span class="ts">${s.range}</span><span class="tp">${s.key === 'xl' ? html`dès ${fcfa(P.xl)}` : fcfa(P[s.key])}</span></button>`);
       return {
         q, sub: 'Touchez le dessin qui ressemble à votre colis.', body: html`<div class="grid2">${tiles}</div>`, foot: '',
         voice: [{ t: q }].concat(SIZES.map((s, i) => ({ t: s.name + ', ' + s.range.replace(' à ', ' à ') + '. ' + VO.fcfa(s.key === 'xl' ? P.xl : P[s.key]) + (s.key === 'xl' ? ', prix confirmé par l\'équipe' : '') + '.', sel: '[data-vid="s' + i + '"]' }))),
@@ -370,11 +371,11 @@
           <button type="button" class="btn ghost full" data-act="loc-get" data-vid="lg" style="margin-top:14px">${ic('pin', 26)}Changer ma position</button>`;
         voice = [{ t: q }, { t: 'Votre position est enregistrée. Touchez le bouton vert Suivant pour continuer.', sel: '#wz-next' }];
       } else {
-        main = html`<div class="lochero">${il('location', 156)}</div>${err}
+        main = html`<div class="lochero">${il('location', 112)}</div>${err}
           <button type="button" class="btn primary xl full" data-act="loc-get" data-vid="lg">${ic('pin', 30)}${D.locErr ? 'Réessayer' : 'Partager ma position'}</button>`;
         voice = [{ t: q }, { t: 'Touchez le grand bouton vert pour partager votre position. Le livreur viendra directement chez vous.', sel: '[data-vid="lg"]' }];
       }
-      const callMe = html`<button type="button" class="btn ghost full callme${callSel ? ' sel' : ''}" data-act="loc-callme" data-vid="qc" style="margin-top:14px">${il('phone', 40)}Appelez-moi à la place</button>`;
+      const callMe = html`<button type="button" class="btn ghost full callme${callSel ? ' sel' : ''}" data-act="loc-callme" data-vid="qc" style="margin-top:10px">${il('phone', 32)}Appelez-moi à la place</button>`;
       if (!D.loc) voice.push({ t: 'Si votre téléphone ne trouve pas votre position, touchez ce bouton : nous vous appelons.', sel: '[data-vid="qc"]' });
       return {
         q, sub: D.loc || wait ? '' : 'Le téléphone va demander la permission : touchez « Autoriser ».',
@@ -387,7 +388,7 @@
       const q = 'Photo de votre carte d\'identité';
       return {
         q, sub: 'Obligatoire pour retirer le colis.',
-        body: html`<div class="pframe${D.photo ? ' ok' : ''}">${D.photo ? html`<img src="${D.photo}" alt="Votre carte d'identité"><span class="okbadge">${ic('check', 28)}</span><span class="pcap">Photo prête</span>` : il('id-card', 150)}</div>
+        body: html`<div class="pframe${D.photo ? ' ok' : ''}">${D.photo ? html`<img src="${D.photo}" alt="Votre carte d'identité"><span class="okbadge">${ic('check', 28)}</span><span class="pcap">Photo prête</span>` : il('id-card', 112)}</div>
           ${K.photoButtons('id', { cam: D.photo ? 'Reprendre la photo' : 'Prendre la photo' })}
           <div class="note-soft">${ic('lock', 24)}<span>Seuls Nazari Express et votre livreur la voient. La photo est effacée un jour après la livraison.</span></div>`,
         foot: bigNext('wz-next', 'wiz-next', READY.idcard(D)),
@@ -408,11 +409,11 @@
     list(D) {
       const q = 'Que voulez-vous acheter ?';
       const tiles = html`<div class="grid2">
-        <button type="button" class="tile${D.rxMode === 'photo' ? ' sel' : ''}" data-act="rx-mode" data-v="photo" data-vid="r1">${il('rx', 84)}<span class="tt">Photo de l'ordonnance</span></button>
-        <button type="button" class="tile${D.rxMode === 'text' ? ' sel' : ''}" data-act="rx-mode" data-v="text" data-vid="r2">${il('chat', 84)}<span class="tt">Écrire la liste</span></button></div>`;
+        <button type="button" class="tile${D.rxMode === 'photo' ? ' sel' : ''}" data-act="rx-mode" data-v="photo" data-vid="r1">${il('rx', 60)}<span class="tt">Photo de l'ordonnance</span></button>
+        <button type="button" class="tile${D.rxMode === 'text' ? ' sel' : ''}" data-act="rx-mode" data-v="text" data-vid="r2">${il('chat', 60)}<span class="tt">Écrire la liste</span></button></div>`;
       let more = '';
       if (D.rxMode === 'photo') {
-        more = html`<div style="margin-top:18px"><div class="pframe${D.rxPhoto ? ' ok' : ''}">${D.rxPhoto ? html`<img src="${D.rxPhoto}" alt="Votre ordonnance"><span class="okbadge">${ic('check', 28)}</span><span class="pcap">Photo prête</span>` : il('rx', 140)}</div>
+        more = html`<div style="margin-top:18px"><div class="pframe${D.rxPhoto ? ' ok' : ''}">${D.rxPhoto ? html`<img src="${D.rxPhoto}" alt="Votre ordonnance"><span class="okbadge">${ic('check', 28)}</span><span class="pcap">Photo prête</span>` : il('rx', 100)}</div>
           ${K.photoButtons('rx', { cam: D.rxPhoto ? 'Reprendre la photo' : 'Prendre la photo' })}</div>`;
       } else if (D.rxMode === 'text') {
         more = html`<div class="card-who" style="margin-top:18px">${U.field({ label: 'Votre liste', kind: 'textarea', bind: 'list', value: D.list, rows: 4, maxlength: 600, placeholder: 'Ex. Paracétamol 500 mg, 2 boîtes' })}</div>`;
@@ -428,7 +429,7 @@
       const e = estimate(D);
       const placeText = (d) => (d.loc ? 'Votre position (GPS)' : d.quartier === CALL_ME ? 'À préciser : nous vous appelons' : d.quartier);
       const placeSub = (d) => (d.loc && d.loc.acc ? 'précision environ ' + d.loc.acc + ' m' : '');
-      const row = (ilName, label, main, sub) => html`<div class="r">${il(ilName, 54)}<div class="rt"><small>${label}</small><b>${main}</b>${sub ? html`<span>${sub}</span>` : ''}</div></div>`;
+      const row = (ilName, label, main, sub) => html`<div class="r">${il(ilName, 42)}<div class="rt"><small>${label}</small><b>${main}</b>${sub ? html`<span>${sub}</span>` : ''}</div></div>`;
       const rows = [];
       let say = '';
       if (D.flow === 'send') {
@@ -457,7 +458,7 @@
         body: html`${errBox(D.err)}<div class="rec">${rows}</div>
           <div class="price-big"><small>${D.flow === 'pharma' ? 'Livraison' : e.quote ? 'Prix à partir de' : 'Prix de la livraison'}</small><span class="n">${U.fnum(e.total)}<u>FCFA</u></span>
             <span class="x">${e.far ? 'dont ' + fcfa(e.farFee) + (D.loc ? ' parce que vous êtes loin du centre. ' : ' pour un quartier éloigné. ') : ''}${e.quote ? 'Prix confirmé par l\'équipe avant le départ. ' : ''}${e.unknown ? 'Un supplément peut s\'ajouter, confirmé par téléphone.' : ''}</span></div>
-          <div class="pay-row">${il('cash', 54)}<span>Vous payez le livreur.${cnt ? ' ' + cnt : ''}</span></div>
+          <div class="pay-row">${il('cash', 42)}<span>Vous payez le livreur.${cnt ? ' ' + cnt : ''}</span></div>
           ${NZ.company().maintenance ? html`<div class="err-box" style="margin-top:14px">${ic('alert', 26)}<div>Les commandes sont suspendues pour le moment.</div></div>` : ''}`,
         foot: html`<div class="foot"><button type="button" class="btn primary xl full" data-act="wiz-send">${ic('check', 30)}Envoyer ma commande</button></div>`,
         voice: [{ t: 'Voici votre commande.' }, { t: say }, { t: 'Le prix est de ' + VO.fcfa(e.total) + (D.flow === 'pharma' ? ', plus les médicaments' : '') + '. Vous payez le livreur.', sel: '.price-big' }, { t: 'Si tout est bon, touchez le grand bouton vert pour envoyer.', sel: '[data-act="wiz-send"]' }],
@@ -472,7 +473,7 @@
     const foot = S.foot !== undefined ? S.foot : bigNext('wz-next', 'wiz-next', READY[F.steps[n]](D));
     return html`<div class="wz">
       <div class="dots" aria-hidden="true">${F.steps.map((s, i) => html`<i class="${i < n ? 'done' : i === n ? 'now' : ''}"></i>`)}</div>
-      <div class="qrow">${S.il ? html`<span class="qill">${il(S.il, 74)}</span>` : ''}<div class="qtxt"><h1 class="qt">${nbsp(S.q)}</h1>${S.sub ? html`<p class="qs">${S.sub}</p>` : ''}</div>${VO.btn()}</div>
+      <div class="qrow">${S.il ? html`<span class="qill">${il(S.il, 54)}</span>` : ''}<div class="qtxt"><h1 class="qt">${nbsp(S.q)}</h1>${S.sub ? html`<p class="qs">${S.sub}</p>` : ''}</div>${VO.btn()}</div>
       ${S.body}${foot}</div>`;
   }
   function onBind() {
@@ -620,7 +621,7 @@
   let OL = { scope: 'active', items: [] };
   const olView = () => html`<div class="seg-big"><button type="button" class="${OL.scope === 'active' ? 'on' : ''}" data-act="ol-scope" data-v="active">En cours</button><button type="button" class="${OL.scope === 'done' ? 'on' : ''}" data-act="ol-scope" data-v="done">Terminés</button></div>
     ${OL.items.length ? OL.items.map(orderCard)
-      : html`<div class="empty" style="padding:24px 10px">${il('empty', 150, 'c')}<div class="t" style="font-size:22px;margin-top:6px">${OL.scope === 'active' ? 'Aucun colis en cours' : 'Aucun colis terminé'}</div>
+      : html`<div class="empty" style="padding:24px 10px">${il('empty', 112, 'c')}<div class="t" style="font-size:22px;margin-top:6px">${OL.scope === 'active' ? 'Aucun colis en cours' : 'Aucun colis terminé'}</div>
         <div style="margin-top:16px"><a class="btn primary xl full" href="#/">Faire une commande</a></div></div>`}`;
   NZ.route('/orders', async (ctx) => {
     ctx.shell({ title: 'Mes colis', tab: 'mine', cls: 'cl', skeleton: false });
@@ -654,16 +655,16 @@
     const nodes = [['Reçue', 0], ['Validée', 1], ['En route', 2], ['Livrée', 3]];
     const track = o.status === 'cancelled' ? '' : html`<div class="trk">${nodes.map(([t, i]) => html`<div class="tn ${i < st.w ? 'done' : i === st.w ? 'now' : ''}"><i>${i < st.w || o.status === 'delivered' ? ic('check', 24) : i === st.w ? ic('clock', 22) : ''}</i>${t}</div>`)}</div>`;
     return html`<div>
-      ${isNew && o.status === 'received' ? html`<div class="stp" style="margin-bottom:16px">${il('success', 130)}<h1>Commande envoyée !</h1><p>Nous la validons très vite. Vous suivrez tout ici.</p></div>` : ''}
+      ${isNew && o.status === 'received' ? html`<div class="stp" style="margin-bottom:12px">${il('success', 96)}<h1>Commande envoyée !</h1><p>Nous la validons très vite. Vous suivrez tout ici.</p></div>` : ''}
       ${isNew && rxFail ? html`<div class="err-box">${ic('alert', 26)}<div>Votre ordonnance n'est pas partie. Envoyez-la en photo dans la discussion.</div></div>` : ''}
-      <div class="stp ${st.cls}" data-vid="stp">${il(st.il, 140)}<h1>${st.t}</h1><p>${st.s}</p><span class="code num">${o.code}</span>${track}</div>
+      <div class="stp ${st.cls}" data-vid="stp">${il(st.il, 100)}<h1>${st.t}</h1><p>${st.s}</p><span class="code num">${o.code}</span>${track}</div>
       ${drv && !FINAL.includes(o.status) ? html`<div class="cbox"><h2>Votre livreur</h2><div class="drv"><span class="av">${U.initials(drv.name)}</span><div><b>${drv.name}</b><span>+227 ${U.fphone(drv.phone)}</span></div></div>
         <div style="margin-top:14px">${btn({ href: U.telLink(drv.phone), label: 'Appeler le livreur', kind: 'primary', full: true, icon: 'phone', size: 'xl' })}</div></div>` : ''}
       <div class="cbox"><h2>${orderTitle(o)}</h2>
-        <div class="pay-row" style="margin-top:0">${il('cash', 54)}<span>À payer au livreur : ${V.amountText(o)}</span></div>
-        ${o.service === 'agency_pickup' ? html`<div class="note-soft">${il('id-card', 40)}<span>Photo de votre carte envoyée. Elle sera effacée un jour après la livraison.</span></div>` : ''}
+        <div class="pay-row" style="margin-top:0">${il('cash', 42)}<span>À payer au livreur : ${V.amountText(o)}</span></div>
+        ${o.service === 'agency_pickup' ? html`<div class="note-soft">${il('id-card', 32)}<span>Photo de votre carte envoyée. Elle sera effacée un jour après la livraison.</span></div>` : ''}
         <details style="margin-top:14px"><summary style="font-weight:800;font-size:17px;padding:8px 0">Voir les détails</summary>${V.routeBlock(o)}${o.fees && (o.fees.total > 0 || o.service === 'pharmacy') ? V.feeBox(o) : ''}</details></div>
-      <div class="cbox"><a class="btn primary xl full" href="#/chat?order=${o.id}">${il('chat', 44)}Écrire à ${NZ.company().name}</a></div>
+      <div class="cbox"><a class="btn primary xl full" href="#/chat?order=${o.id}">${il('chat', 34)}Écrire à ${NZ.company().name}</a></div>
       ${o.can_cancel ? html`<div style="margin-top:18px">${btn({ label: 'Annuler la commande', kind: 'danger', full: true, act: 'order-cancel', id: o.id })}</div>` : ''}
     </div>`;
   }
@@ -715,6 +716,7 @@
       ${arow({ icon: 'lock', t: 'Changer mon code secret', act: 'change-pin' })}
       ${arow({ icon: 'tag', t: 'Nos prix', href: '#/tarifs' })}
       ${arow({ icon: 'help', t: 'Aide', href: '#/help' })}
+      ${arow({ icon: 'share', t: 'Partager l\'application', href: '#/share' })}
       ${installed ? '' : arow({ icon: 'download', t: 'Mettre sur mon écran d\'accueil', act: 'install-app', noArrow: true })}
       ${arow({ icon: 'out', t: 'Me déconnecter', act: 'logout', cls: 'red', noArrow: true })}`);
     VO.screen(() => [{ t: 'Votre compte. Votre numéro est le ' + VO.phone(u.phone) + '.' }]);

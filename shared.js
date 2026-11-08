@@ -2,7 +2,7 @@
 (function (NZ) {
   'use strict';
   const U = NZ.ui;
-  const { html, str, ic, fcfa, fwhen, ftime, SERVICE, statusChip, btn, telLink, waLink } = U;
+  const { html, raw, str, ic, fcfa, fwhen, ftime, SERVICE, statusChip, btn, telLink, waLink } = U;
   const V = (NZ.v = {});
   NZ.VERSION = '1.0.0';
 
@@ -200,6 +200,139 @@
       if (NZ.kit && NZ.kit.viewPhoto) NZ.kit.viewPhoto(r.img, 'Carte d\'identité');
     } catch (e) { U.toast(e.message, 'err'); }
   }));
+
+  /* ---------- code QR ----------
+     Petit générateur de code QR (texte en octets, correction d'erreurs niveau M, versions 1 à 10 : jusqu'à 213 caractères).
+     V.qr(texte) renvoie une matrice de 0 et de 1 ; V.qrSvg(texte) renvoie le dessin prêt à afficher. */
+  V.qr = function (text) {
+    const data = Array.from(new TextEncoder().encode(String(text)));
+    const EC = [null, [10, [1, 16]], [16, [1, 28]], [26, [1, 44]], [18, [2, 32]], [24, [2, 43]], [16, [4, 27]], [18, [4, 31]], [22, [2, 38], [2, 39]], [22, [3, 36], [2, 37]], [26, [4, 43], [1, 44]]];
+    const ALIGN = [null, [], [6, 18], [6, 22], [6, 26], [6, 30], [6, 34], [6, 22, 38], [6, 24, 42], [6, 26, 46], [6, 28, 50]];
+    let ver = 0, cap = 0;
+    for (let v = 1; v <= 10 && !ver; v++) {
+      const c = EC[v].slice(1).reduce((t, g) => t + g[0] * g[1], 0);
+      if (data.length * 8 + 4 + (v < 10 ? 8 : 16) <= c * 8) { ver = v; cap = c; }
+    }
+    if (!ver) throw new Error('QR : texte trop long');
+    // 1) les données en bits : mode « octets », longueur, texte, fin, remplissage
+    const bits = [];
+    const put = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+    put(4, 4); put(data.length, ver < 10 ? 8 : 16);
+    data.forEach((b) => put(b, 8));
+    put(0, Math.min(4, cap * 8 - bits.length));
+    while (bits.length % 8) bits.push(0);
+    for (let p = 0xEC; bits.length < cap * 8; p ^= 0xEC ^ 0x11) put(p, 8);
+    const cw = [];
+    for (let i = 0; i < bits.length; i += 8) cw.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+    // 2) correction d'erreurs (Reed-Solomon) par blocs, puis mélange des blocs
+    const exp = new Array(512), log = new Array(256);
+    for (let i = 0, x = 1; i < 255; i++) { exp[i] = x; log[x] = i; x <<= 1; if (x & 256) x ^= 0x11D; }
+    for (let i = 255; i < 512; i++) exp[i] = exp[i - 255];
+    const mul = (a, b) => (a && b ? exp[log[a] + log[b]] : 0);
+    const rs = (d, n) => {
+      let g = [1];
+      for (let i = 0; i < n; i++) { const ng = new Array(g.length + 1).fill(0); g.forEach((c, j) => { ng[j] ^= c; ng[j + 1] ^= mul(c, exp[i]); }); g = ng; }
+      const r = new Array(n).fill(0);
+      d.forEach((b) => { const f = b ^ r.shift(); r.push(0); if (f) g.slice(1).forEach((c, j) => { r[j] ^= mul(c, f); }); });
+      return r;
+    };
+    const e = EC[ver], blocks = [];
+    let pos = 0;
+    e.slice(1).forEach(([k, len]) => { for (let i = 0; i < k; i++) { blocks.push(cw.slice(pos, pos + len)); pos += len; } });
+    const ecs = blocks.map((b) => rs(b, e[0]));
+    const out = [];
+    for (let i = 0; i < Math.max.apply(null, blocks.map((b) => b.length)); i++) blocks.forEach((b) => { if (i < b.length) out.push(b[i]); });
+    for (let i = 0; i < e[0]; i++) ecs.forEach((b) => out.push(b[i]));
+    // 3) la grille : repères, alignement, pointillés, puis les données en zigzag
+    const n = 17 + 4 * ver;
+    const M = Array.from({ length: n }, () => new Array(n).fill(0));
+    const F = Array.from({ length: n }, () => new Array(n).fill(false));
+    const set = (r, c, v) => { M[r][c] = v ? 1 : 0; F[r][c] = true; };
+    const finder = (r0, c0) => {
+      for (let r = -1; r <= 7; r++) for (let c = -1; c <= 7; c++) {
+        const rr = r0 + r, cc = c0 + c;
+        if (rr < 0 || cc < 0 || rr >= n || cc >= n) continue;
+        set(rr, cc, r >= 0 && r <= 6 && c >= 0 && c <= 6 && (r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4)));
+      }
+    };
+    finder(0, 0); finder(0, n - 7); finder(n - 7, 0);
+    const AL = ALIGN[ver];
+    AL.forEach((r) => AL.forEach((c) => {
+      if (F[r][c]) return;
+      for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) set(r + dr, c + dc, Math.max(Math.abs(dr), Math.abs(dc)) !== 1);
+    }));
+    for (let i = 8; i < n - 8; i++) { set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
+    // zones réservées au format et à la version (remplies plus bas)
+    for (let i = 0; i < 9; i++) { F[8][i] = true; F[i][8] = true; }
+    for (let i = 0; i < 8; i++) { F[8][n - 1 - i] = true; F[n - 1 - i][8] = true; }
+    if (ver >= 7) for (let i = 0; i < 18; i++) { F[n - 11 + (i % 3)][Math.floor(i / 3)] = true; F[Math.floor(i / 3)][n - 11 + (i % 3)] = true; }
+    let k = 0;
+    for (let right = n - 1; right >= 1; right -= 2) {
+      if (right === 6) right = 5;
+      for (let vert = 0; vert < n; vert++) {
+        for (let j = 0; j < 2; j++) {
+          const c = right - j, r = ((right + 1) & 2) === 0 ? n - 1 - vert : vert;
+          if (!F[r][c] && k < out.length * 8) { M[r][c] = (out[k >>> 3] >>> (7 - (k & 7))) & 1; k++; }
+        }
+      }
+    }
+    // 4) le masque : on garde celui qui donne la grille la plus lisible
+    const masks = [(r, c) => (r + c) % 2 === 0, (r) => r % 2 === 0, (r, c) => c % 3 === 0, (r, c) => (r + c) % 3 === 0,
+      (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0, (r, c) => ((r * c) % 2) + ((r * c) % 3) === 0,
+      (r, c) => (((r * c) % 2) + ((r * c) % 3)) % 2 === 0, (r, c) => ((((r + c) % 2) + ((r * c) % 3)) % 2) === 0];
+    const finish = (g, mask) => {
+      const fmt = (() => { const d = mask; let r = d; for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537); return ((d << 10) | r) ^ 0x5412; })();
+      const b = (i) => (fmt >>> i) & 1;
+      for (let i = 0; i <= 5; i++) g[i][8] = b(i);
+      g[7][8] = b(6); g[8][8] = b(7); g[8][7] = b(8);
+      for (let i = 9; i < 15; i++) g[8][14 - i] = b(i);
+      for (let i = 0; i < 8; i++) g[8][n - 1 - i] = b(i);
+      for (let i = 8; i < 15; i++) g[n - 15 + i][8] = b(i);
+      g[n - 8][8] = 1;
+      if (ver >= 7) {
+        let r = ver;
+        for (let i = 0; i < 12; i++) r = (r << 1) ^ ((r >>> 11) * 0x1F25);
+        const vb = (ver << 12) | r;
+        for (let i = 0; i < 18; i++) { const bit = (vb >>> i) & 1, a = n - 11 + (i % 3), q = Math.floor(i / 3); g[a][q] = bit; g[q][a] = bit; }
+      }
+      return g;
+    };
+    const penalty = (g) => {
+      let p = 0;
+      const line = (get) => {
+        for (let a = 0; a < n; a++) {
+          let run = 1;
+          for (let b = 1; b < n; b++) {
+            if (get(a, b) === get(a, b - 1)) { run++; if (run === 5) p += 3; else if (run > 5) p += 1; } else run = 1;
+          }
+          for (let b = 0; b + 10 < n; b++) {
+            const w = []; for (let t = 0; t < 11; t++) w.push(get(a, b + t));
+            const s = w.join('');
+            if (s === '10111010000' || s === '00001011101') p += 40;
+          }
+        }
+      };
+      line((a, b) => g[a][b]); line((a, b) => g[b][a]);
+      for (let r = 0; r < n - 1; r++) for (let c = 0; c < n - 1; c++) { const v = g[r][c]; if (v === g[r][c + 1] && v === g[r + 1][c] && v === g[r + 1][c + 1]) p += 3; }
+      const dark = g.reduce((t, row) => t + row.reduce((a, b) => a + b, 0), 0);
+      return p + 10 * Math.floor(Math.abs(dark * 20 - n * n * 10) / (n * n));
+    };
+    let best = null, bestP = Infinity;
+    for (let m = 0; m < 8; m++) {
+      const g = M.map((row, r) => row.map((v, c) => (!F[r][c] && masks[m](r, c) ? v ^ 1 : v)));
+      finish(g, m);
+      const p = penalty(g);
+      if (p < bestP) { bestP = p; best = g; }
+    }
+    return best;
+  };
+  /* le même code sous forme de dessin : fond blanc, bord de 4 carrés, carrés noirs */
+  V.qrSvg = function (text, label) {
+    const g = V.qr(text), n = g.length;
+    let d = '';
+    g.forEach((row, r) => row.forEach((v, c) => { if (v) d += 'M' + (c + 4) + ' ' + (r + 4) + 'h1v1h-1z'; }));
+    return html`<svg class="qr" viewBox="0 0 ${n + 8} ${n + 8}" role="img" aria-label="${label || 'Code QR'}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"></rect><path d="${raw(d)}" fill="#000"></path></svg>`;
+  };
 
   /* ---------- messages d'erreur de formulaire ---------- */
   V.errBox = (msg) => (msg ? html`<div class="notice bad" role="alert" style="margin-bottom:14px">${ic('alert', 20)}<div>${msg}</div></div>` : '');

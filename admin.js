@@ -1,4 +1,5 @@
-/* Nazari Express — espace administrateur : commandes, détail, tableau de bord, menu. */
+/* Nazari Express — espace administrateur : accueil, commandes, détail, chiffres, menu « Plus ».
+   Principe : l'écran montre l'essentiel en gros ; tout le reste reste à portée de main (sections repliées, menu « Plus »). */
 (function (NZ) {
   'use strict';
   const U = NZ.ui, V = NZ.v;
@@ -6,12 +7,45 @@
   const ROLES = { client: 'Client', driver: 'Livreur', admin: 'Administrateur' };
   NZ.ROLES = ROLES;
   const A = { roles: ['admin'] };
+  const plural = (n, one, many) => (n > 1 ? many : one);
+
+  /* =====================================================================
+     Accueil : trois grosses cartes
+     ===================================================================== */
+  const bigCard = (cls, href, icon, title, sub, n, vid) => html`<a class="ah-card ${cls}" href="${href}" data-vid="${vid}"><span class="ah-ic">${ic(icon, 26)}</span><span class="ah-tx"><b>${title}</b><small>${sub}</small></span><span class="ah-n${n ? '' : ' zero'}">${n}</span></a>`;
+  function homeView(r) {
+    const open = r.open || {}, t = r.today || {};
+    const first = String((NZ.user() && NZ.user().name) || '').trim().split(/\s+/)[0];
+    const nNew = open.received || 0, nRoad = open.in_delivery || 0, nChat = NZ.chatUnread || 0;
+    const nFree = (NZ.me && NZ.me.counts && NZ.me.counts.available) || 0;
+    return html`<div class="ah">
+      <h1 class="ah-hello">Bonjour${first ? ' ' + first : ''}</h1>
+      <p class="ah-sub">Voici où en est ${NZ.company().name}.</p>
+      ${bigCard('g', '#/admin/orders?s=received', 'box', 'Nouvelles commandes', nNew ? 'à valider' : 'Rien à valider', nNew, 'ah-new')}
+      ${bigCard('b', '#/admin/chats', 'chat', 'Discussions', nChat ? 'à répondre' : 'Aucun message en attente', nChat, 'ah-chat')}
+      ${bigCard('o', '#/admin/orders?s=in_delivery', 'truck', 'En livraison', nRoad ? 'en route chez les clients' : 'Aucune livraison en route', nRoad, 'ah-road')}
+      ${nFree ? html`<a class="ah-free" href="#/admin/orders?s=accepted" data-vid="ah-free">${ic('clock', 20)}<span><b>${nFree} commande${plural(nFree, '', 's')} validée${plural(nFree, '', 's')}</b> en attente d'un livreur</span>${ic('chev', 18)}</a>` : ''}
+      <div class="ah-row">${btn({ label: 'Toutes les commandes', kind: 'ghost', href: '#/admin/orders?s=', icon: 'list' })}${btn({ label: 'Passer une commande', kind: 'ghost', href: '#/new', icon: 'plus' })}</div>
+      <a class="ah-today" href="#/admin/stats" data-vid="ah-today"><span>Aujourd'hui</span><span><b>${fnum(t.orders || 0)}</b> commande${plural(t.orders || 0, '', 's')} · <b>${fnum(t.delivered || 0)}</b> livrée${plural(t.delivered || 0, '', 's')} · <b>${fcfa(t.revenue || 0)}</b></span>${ic('chev', 18)}</a>
+    </div>`;
+  }
+  NZ.route('/admin', async (ctx) => {
+    ctx.shell({ brand: true, tab: 'home' });
+    const load = async () => {
+      await NZ.refreshMe();
+      const r = await NZ.api('admin.stats', { period: 'today' });
+      NZ.scrollKeep(() => ctx.main(homeView(r)));
+      NZ.paintBadges();
+    };
+    try { await load(); } catch (e) { return ctx.fail(e); }
+    ctx.poll(12000, load);
+  }, A);
 
   /* =====================================================================
      Liste des commandes
      ===================================================================== */
   const AO = { status: 'open', service: '', q: '', items: [], total: 0 };
-  const STATUS_CHIPS = [['open', 'Ouvertes'], ['received', 'Nouvelles'], ['delivered', 'Livrées'], ['cancelled', 'Annulées'], ['', 'Toutes']];
+  const STATUS_CHIPS = [['open', 'Ouvertes'], ['received', 'Nouvelles'], ['accepted', 'Validées'], ['in_delivery', 'En livraison'], ['delivered', 'Livrées'], ['cancelled', 'Annulées'], ['', 'Toutes']];
   const chipsHtml = () => html`<div class="filters">${STATUS_CHIPS.map(([v, t]) => html`<button type="button" class="fchip${AO.status === v ? ' on' : ''}" data-act="ao-status-filter" data-v="${v}">${t}${v === 'received' && NZ.me && NZ.me.counts && NZ.me.counts.new ? ' (' + NZ.me.counts.new + ')' : ''}</button>`)}</div>`;
   const gap = (v) => (v < 0 ? '− ' + fcfa(-v) : '+ ' + fcfa(v));
   const aoCard = (o) => V.orderCard(o, '#/admin/order/' + o.id, {
@@ -38,12 +72,12 @@
     }
     const c = document.getElementById('ao-chips'); if (c) c.innerHTML = str(chipsHtml());
   }
-  NZ.route('/admin', async (ctx) => {
+  NZ.route('/admin/orders', async (ctx) => {
     ctx.shell({ title: 'Commandes', tab: 'orders' });
     aoCtx = ctx;
+    if (ctx.query && 's' in ctx.query) AO.status = STATUS_CHIPS.some(([v]) => v === ctx.query.s) ? ctx.query.s : 'open';
     await NZ.refreshMe();
-    ctx.main(html`${!NZ.company().whatsapp ? html`<div style="margin-bottom:12px"><a href="#/admin/config" style="display:block">${V.notice('Votre numéro WhatsApp n\'est pas encore renseigné : les clients ne peuvent pas vous écrire. Touchez ici pour le configurer.', 'warn')}</a></div>` : ''}
-      <div id="ao-chips">${chipsHtml()}</div>
+    ctx.main(html`<div id="ao-chips">${chipsHtml()}</div>
       <div class="grid2" style="margin-bottom:14px"><input class="input" type="search" data-bind="q" value="${AO.q}" placeholder="N°, nom, téléphone" aria-label="Rechercher une commande" autocomplete="off">
         <select class="input" data-bind="service" aria-label="Type de service">${[['', 'Tous les services'], ['parcel', 'Colis'], ['agency_drop', 'Dépôt agence'], ['agency_pickup', 'Retrait agence'], ['pharmacy', 'Pharmacie']].map(([v, t]) => html`<option value="${v}"${AO.service === v ? raw(' selected') : ''}>${t}</option>`)}</select></div>
       <div id="ao-list">${U.skeleton(3)}</div>`);
@@ -71,65 +105,74 @@
   });
 
   /* =====================================================================
-     Détail d'une commande
+     Détail d'une commande : un seul gros bouton « étape suivante »
      ===================================================================== */
   let AR = null, arCtx = null, AF = {};
+  const FOLD = {};   // sections ouvertes à la main par l'administrateur (gardées quand l'écran se rafraîchit)
   const sumFees = (f) => ['fee_base', 'fee_express', 'fee_far', 'fee_adjust', 'items_amount'].reduce((t, k) => t + (parseInt(String(f[k] || '0').replace(/\s/g, ''), 10) || 0), 0);
-  const NEXT = (o) => ({
-    received: [['accepted', 'Valider la commande', 'check', 'primary']],
-    accepted: o.service === 'pharmacy' ? [['preparing', 'Pharmacie : en préparation', 'clock', 'primary'], ['in_delivery', 'Mettre en livraison', 'truck', 'ghost']] : [['in_delivery', 'Mettre en livraison', 'truck', 'primary']],
-    preparing: [['in_delivery', 'Mettre en livraison', 'truck', 'primary']],
-    in_delivery: [['delivered', 'Marquer comme livrée', 'dcheck', 'primary']],
-    delivered: [], cancelled: [],
-  }[o.status] || []);
+  /* L'étape qui vient ensuite : valider, donner à un livreur, mettre en livraison, marquer livrée. */
+  function mainStep(o) {
+    if (o.status === 'received') return { st: 'accepted', label: 'Valider la commande', icon: 'check' };
+    if (o.status === 'accepted' || o.status === 'preparing') {
+      return o.driver ? { st: 'in_delivery', label: 'Mettre en livraison', icon: 'truck' } : { pick: true, label: 'Donner à un livreur', icon: 'truck' };
+    }
+    if (o.status === 'in_delivery') return { st: 'delivered', label: 'Marquer comme livrée', icon: 'dcheck' };
+    return null;
+  }
+  const foldBox = (key, title, end, open, body) => html`<details class="fold" data-k="${key}"${open ? raw(' open') : ''}><summary><span>${title}</span>${end ? html`<b class="num fe">${end}</b>` : ''}</summary><div class="fold-b">${body}</div></details>`;
 
   function aoDetail(R) {
-    const o = R.order, s = SERVICE[o.service] || SERVICE.parcel, c = o.customer, drivers = R.drivers || [];
+    const o = R.order, s = SERVICE[o.service] || SERVICE.parcel, c = o.customer;
     const dims = o.dims ? [o.dims.l, o.dims.w, o.dims.h].filter(Boolean).join(' × ') + ' cm' : '';
     const flags = [o.express ? 'Express' : '', o.far ? 'Zone éloignée' : '', o.zone_unknown ? 'Quartier hors liste' : '', o.quote ? 'Sur devis' : ''].filter(Boolean);
-    const next = NEXT(o);
+    const step = mainStep(o);
+    const closed = ['delivered', 'cancelled'].includes(o.status);
+    const isOpen = (k, dflt) => (k in FOLD ? FOLD[k] : dflt);
     return html`<div class="stack">
       <div class="card"><div class="code-card" style="justify-content:space-between"><div style="display:flex;gap:12px;align-items:center"><span class="disc sm solid">${ic(s.icon, 20)}</span><div><div class="muted small">${s.long}</div><div class="h2 num">${o.code}</div></div></div>${statusChip(o.status)}</div>
-        ${V.kv([['Client', c.name], ['Téléphone', '+227 ' + U.fphone(c.phone)], ['Reçue', fwhen(o.created_at)], ['Paiement', V.payText(o) + ' · payé par ' + (o.payer === 'sender' ? 'l\'expéditeur' : 'le destinataire')], ['Livreur', o.driver ? o.driver.name + ' · ' + U.fphone(o.driver.phone) : 'Pas encore assigné'], o.status === 'delivered' && o.collected != null ? ['Encaissé', fcfa(o.collected)] : null, o.variance ? ['Écart de caisse', gap(o.variance) + (o.variance < 0 ? ' (il manque de l\'argent)' : ' (trop perçu)')] : null, o.cancel_reason ? ['Motif', o.cancel_reason] : null])}
+        ${V.kv([['Client', c.name], ['Téléphone', '+227 ' + U.fphone(c.phone)], ['Reçue', fwhen(o.created_at)], ['Paiement', V.payText(o) + ' · payé par ' + (o.payer === 'sender' ? 'l\'expéditeur' : 'le destinataire')], o.status === 'delivered' && o.collected != null ? ['Encaissé', fcfa(o.collected)] : null, o.variance ? ['Écart de caisse', gap(o.variance) + (o.variance < 0 ? ' (il manque de l\'argent)' : ' (trop perçu)')] : null, o.cancel_reason ? ['Motif', o.cancel_reason] : null])}
         ${o.variance ? html`<div style="margin-top:10px">${V.notice('Le livreur a encaissé ' + fcfa(o.collected) + ' au lieu de ' + fcfa(o.fees.total) + '. Son explication figure dans l\'historique plus bas.', 'warn')}</div>` : ''}
         ${flags.length ? html`<div class="actions" style="margin-top:10px">${flags.map((f) => html`<span class="chip warn">${f}</span>`)}</div>` : ''}
         ${V.callRow(c.phone, 'Bonjour ' + c.name + ', ' + NZ.company().name + ' au sujet de votre commande ' + o.code + ' : ', 'Appeler le client')}</div>
 
+      ${!closed ? html`<div class="ao-next" data-vid="ao-next">
+        ${step ? (step.pick
+          ? btn({ label: step.label, kind: 'primary', full: true, size: 'lg', icon: step.icon, act: 'ao-driver-open' })
+          : btn({ label: step.label, kind: 'primary', full: true, size: 'lg', icon: step.icon, act: 'ao-status', data: { st: step.st } })) : ''}
+        <div class="ao-more">
+          ${o.status === 'accepted' && o.service === 'pharmacy' ? btn({ label: 'Pharmacie : en préparation', kind: 'ghost', size: 'sm', icon: 'clock', act: 'ao-status', data: { st: 'preparing' } }) : ''}
+          ${step && step.pick ? btn({ label: 'Mettre en livraison', kind: 'ghost', size: 'sm', icon: 'truck', act: 'ao-status', data: { st: 'in_delivery' } }) : ''}
+          ${btn({ label: 'Annuler la commande', kind: 'danger', size: 'sm', act: 'ao-cancel' })}</div></div>` : ''}
+
       ${V.idCardBox(o, { can: true, note: 'Chaque consultation est notée dans le journal d\'activité.' })}
 
-      ${next.length || !['delivered', 'cancelled'].includes(o.status) ? html`<div class="card"><div class="h2" style="margin-bottom:10px">Étape suivante</div>
-        <div class="stack">${next.map(([st, label, icon, kind]) => btn({ label, kind, full: true, size: 'lg', icon, act: 'ao-status', data: { st } }))}
-        ${!['delivered', 'cancelled'].includes(o.status) ? btn({ label: 'Annuler la commande', kind: 'danger', full: true, act: 'ao-cancel' }) : ''}</div></div>` : ''}
+      <div class="card"><div class="h2" style="margin-bottom:12px">Adresses</div>${V.routeBlock(o)}
+        ${V.kv([[o.service === 'pharmacy' ? 'Liste du client' : 'Contenu', o.desc], o.service !== 'pharmacy' ? ['Poids', Number(o.weight_kg).toString().replace('.', ',') + ' kg'] : null, ['Dimensions', dims], ['Message du client', o.note]])}</div>
 
-      <div class="card"><div class="h2" style="margin-bottom:10px">Livreur</div>
-        <form data-submit="ao-driver" novalidate>
-          ${field({ label: 'Assigner à', kind: 'select', name: 'driver_id', value: o.driver ? o.driver.id : '', options: [{ v: '', t: 'Personne (les livreurs choisissent)' }].concat(drivers.map((d) => ({ v: d.id, t: d.name + (d.role === 'admin' ? ' (admin)' : '') }))) })}
-          <div style="margin-top:12px">${btn({ label: 'Enregistrer le livreur', type: 'submit', kind: 'ghost', full: true })}</div></form></div>
+      <div class="card ao-drv"><div style="flex:1;min-width:0"><div class="muted small">Livreur</div><div class="ao-dn">${o.driver ? o.driver.name : 'Pas encore assigné'}</div>${o.driver ? html`<div class="small muted">+227 ${U.fphone(o.driver.phone)}</div>` : ''}</div>
+        ${closed ? '' : btn({ label: o.driver ? 'Changer' : 'Choisir', kind: 'ghost', size: 'sm', act: 'ao-driver-open' })}</div>
 
-      <div class="card"><div class="h2" style="margin-bottom:10px">Montants (FCFA)</div>
-        <form data-submit="ao-amounts" novalidate>
+      ${foldBox('amounts', 'Montants', fcfa(o.fees.total), isOpen('amounts', !!o.quote), html`<form data-submit="ao-amounts" novalidate>
           <div class="grid2">${field({ label: 'Livraison', bind: 'fee_base', name: 'fee_base', value: AF.fee_base, inputmode: 'numeric' })}${field({ label: 'Express', bind: 'fee_express', name: 'fee_express', value: AF.fee_express, inputmode: 'numeric' })}</div>
           <div class="grid2" style="margin-top:14px">${field({ label: 'Zone éloignée', bind: 'fee_far', name: 'fee_far', value: AF.fee_far, inputmode: 'numeric' })}${field({ label: 'Ajustement (+ ou −)', bind: 'fee_adjust', name: 'fee_adjust', value: AF.fee_adjust, inputmode: 'text', placeholder: 'ex. -200' })}</div>
           ${o.service === 'pharmacy' ? html`<div style="margin-top:14px">${field({ label: 'Médicaments / produits', bind: 'items_amount', name: 'items_amount', value: AF.items_amount, inputmode: 'numeric', hint: 'Montant confirmé avec la pharmacie : le client est prévenu.' })}</div>` : html`<input type="hidden" name="items_amount" value="${AF.items_amount}">`}
           <label class="check${AF.quote ? ' on' : ''}" style="margin-top:14px"><input type="checkbox" name="quote" data-bind="quote"${AF.quote ? raw(' checked') : ''}><div><div class="t">Prix sur devis</div><div class="s">Cochez tant que le prix n'est pas confirmé au client.</div></div></label>
           <div class="price-box" style="margin-top:14px"><div class="line tot" style="border:0;margin:0;padding:0"><span>Total à encaisser</span><span class="num" id="ao-total">${fcfa(sumFees(AF))}</span></div></div>
-          <div style="margin-top:12px">${btn({ label: 'Enregistrer les montants', type: 'submit', full: true })}</div></form></div>
+          <div style="margin-top:12px">${btn({ label: 'Enregistrer les montants', type: 'submit', full: true })}</div></form>`)}
 
-      <div class="card"><div class="h2" style="margin-bottom:12px">Adresses</div>${V.routeBlock(o)}
-        ${V.kv([[o.service === 'pharmacy' ? 'Liste du client' : 'Contenu', o.desc], o.service !== 'pharmacy' ? ['Poids', Number(o.weight_kg).toString().replace('.', ',') + ' kg'] : null, ['Dimensions', dims], ['Message du client', o.note]])}</div>
+      ${foldBox('note', 'Note interne', '', isOpen('note', false), html`<form data-submit="ao-note" novalidate>${field({ label: 'Visible par l\'équipe seulement', kind: 'textarea', name: 'admin_note', value: o.admin_note || '', rows: 2, maxlength: 500 })}
+        <div style="margin-top:12px">${btn({ label: 'Enregistrer la note', type: 'submit', kind: 'ghost', full: true })}</div></form>`)}
 
-      <div class="card"><div class="h2" style="margin-bottom:10px">Note interne</div>
-        <form data-submit="ao-note" novalidate>${field({ label: 'Visible par l\'équipe seulement', kind: 'textarea', name: 'admin_note', value: o.admin_note || '', rows: 2, maxlength: 500 })}
-        <div style="margin-top:12px">${btn({ label: 'Enregistrer la note', type: 'submit', kind: 'ghost', full: true })}</div></form></div>
-
-      <div class="card"><div class="h2" style="margin-bottom:10px">Historique</div><ul class="hist">${(R.events || []).slice().reverse().map((e) => html`<li><b>${STATUS[e.status] || e.status}</b><span class="muted"> · ${fwhen(e.at)}</span>${e.note ? html`<div class="small muted">${e.note}</div>` : ''}</li>`)}</ul>
+      ${foldBox('hist', 'Historique', '', isOpen('hist', false), html`<ul class="hist">${(R.events || []).slice().reverse().map((e) => html`<li><b>${STATUS[e.status] || e.status}</b><span class="muted"> · ${fwhen(e.at)}</span>${e.note ? html`<div class="small muted">${e.note}</div>` : ''}</li>`)}</ul>
         <details style="margin-top:12px"><summary class="link-btn" style="cursor:pointer">Corriger l'état de la commande…</summary>
           <form data-submit="ao-fixstate" novalidate style="margin-top:10px">${field({ label: 'Nouvel état', kind: 'select', name: 'status', value: o.status, options: Object.keys(STATUS).map((k) => ({ v: k, t: STATUS[k] })) })}
-          <div style="margin-top:10px">${btn({ label: 'Appliquer', type: 'submit', kind: 'ghost', full: true })}</div></form></details></div>
+          <div style="margin-top:10px">${btn({ label: 'Appliquer', type: 'submit', kind: 'ghost', full: true })}</div></form></details>`)}
     </div>`;
   }
   const resetAF = (o) => { const f = o.fees; AF = { fee_base: String(f.base), fee_express: String(f.express), fee_far: String(f.far), fee_adjust: String(f.adjust), items_amount: String(f.items), quote: !!o.quote }; };
+  const keepFolds = () => document.querySelectorAll('#main details.fold[data-k]').forEach((d) => { FOLD[d.dataset.k] = d.open; });
   function paintAR() {
+    keepFolds();
     NZ.scrollKeep(() => { arCtx.main(aoDetail(AR)); });
     NZ.bindTarget = AF;
     NZ.onBind = (path, el, v) => {
@@ -138,8 +181,9 @@
     };
   }
   NZ.route('/admin/order/:id', async (ctx) => {
-    ctx.shell({ title: 'Commande', back: '#/admin', tab: 'orders' });
+    ctx.shell({ title: 'Commande', back: '#/admin/orders', tab: 'orders' });
     arCtx = ctx;
+    Object.keys(FOLD).forEach((k) => { delete FOLD[k]; });
     try {
       AR = await NZ.api('admin.order.get', { id: ctx.params.id });
       resetAF(AR.order); paintAR();
@@ -166,12 +210,28 @@
     const ok = await U.confirmBox({ title: 'Annuler cette commande ?', text: 'Le client et le livreur seront prévenus.', reason: 'Motif (affiché au client)', ok: 'Annuler la commande', cancel: 'Retour', danger: true });
     if (ok) aoUpdate({ status: 'cancelled', cancel_reason: ok.reason }, null, 'Commande annulée');
   });
-  NZ.submit('ao-driver', (f) => aoUpdate({ driver_id: U.formData(f).driver_id || null }, f.querySelector('button[type=submit]'), 'Livreur enregistré'));
+  /* choix du livreur : une liste de gros boutons */
+  NZ.act('ao-driver-open', () => {
+    const drivers = (AR && AR.drivers) || [];
+    const cur = AR && AR.order.driver ? AR.order.driver.id : '';
+    U.openOverlay(html`<h2>Quel livreur ?</h2><p class="muted small" style="margin-bottom:12px">Il reçoit tout de suite la course sur son téléphone.</p>
+      <div class="stack">${drivers.length ? drivers.map((d) => html`<button type="button" class="pick${cur === d.id ? ' on' : ''}" data-act="ao-driver-set" data-id="${d.id}" data-vid="drv-${d.id}"><span class="av">${U.initials(d.name)}</span><span class="pt"><b>${d.name}</b><small>${d.role === 'admin' ? 'Administrateur' : 'Livreur'}</small></span>${cur === d.id ? ic('check', 22) : ''}</button>`)
+        : html`<div class="notice">${ic('info', 20)}<div>Aucun livreur pour le moment. Invitez-en un : « Plus » → « Invitations ».</div></div>`}
+        <button type="button" class="pick none" data-act="ao-driver-set" data-id="" data-vid="drv-none"><span class="pt"><b>${cur ? 'Retirer le livreur' : 'Laisser les livreurs choisir'}</b><small>${cur ? 'La course redevient libre' : 'La course reste libre pour tous les livreurs'}</small></span></button>
+        ${btn({ label: 'Fermer', kind: 'ghost', full: true, act: 'overlay-close' })}</div>`);
+  });
+  NZ.act('ao-driver-set', (el) => {
+    const id = el.dataset.id || '';
+    const cur = AR && AR.order.driver ? AR.order.driver.id : '';
+    U.closeOverlay();
+    if (id === cur) return;
+    aoUpdate({ driver_id: id || null }, null, id ? 'Livreur prévenu' : 'Livreur retiré');
+  });
   NZ.submit('ao-note', (f) => aoUpdate({ admin_note: U.formData(f).admin_note }, f.querySelector('button[type=submit]'), 'Note enregistrée'));
   NZ.submit('ao-fixstate', (f) => aoUpdate({ status: U.formData(f).status }, f.querySelector('button[type=submit]'), 'État corrigé'));
   NZ.submit('ao-amounts', (f) => {
     const d = U.formData(f);
-    const clean = (v) => String(v == null ? '' : v).replace(/[\s ]/g, '');
+    const clean = (v) => String(v == null ? '' : v).replace(/[\s ]/g, '');
     const patch = { quote: !!d.quote };
     for (const k of ['fee_base', 'fee_express', 'fee_far', 'items_amount']) {
       const v = clean(d[k]); if (v === '') continue;
@@ -184,7 +244,7 @@
   });
 
   /* =====================================================================
-     Tableau de bord
+     Chiffres (tableau de bord)
      ===================================================================== */
   const ST = { period: 'today' };
   function statsView(r) {
@@ -205,7 +265,7 @@
   }
   let stCtx = null, stData = null;
   NZ.route('/admin/stats', async (ctx) => {
-    ctx.shell({ title: 'Tableau de bord', tab: 'stats' });
+    ctx.shell({ title: 'Mes chiffres', back: '#/admin/more', tab: 'more' });
     stCtx = ctx;
     const load = async () => { stData = await NZ.api('admin.stats', { period: ST.period }); NZ.scrollKeep(() => ctx.main(statsView(stData))); };
     NZ.statsLoad = load;
@@ -216,28 +276,37 @@
   NZ.act('noop', () => {});
 
   /* =====================================================================
-     Menu « Plus »
+     Menu « Plus » : de grosses tuiles, rien n'est caché
      ===================================================================== */
+  const tile = (href, icon, title, sub, tone, vid, n) => html`<a class="mt ${tone || ''}" href="${href}" data-vid="${vid}"><span class="mi">${ic(icon, 22)}</span><b>${title}</b><small>${sub}</small>${n ? html`<span class="badge">${n}</span>` : ''}</a>`;
   NZ.route('/admin/more', async (ctx) => {
     ctx.shell({ title: 'Plus', tab: 'more', skeleton: false });
     await NZ.refreshMe();
-    ctx.main(html`<div class="stack">
-      ${!NZ.company().whatsapp ? html`<a href="#/admin/config" style="display:block">${V.notice('Numéro WhatsApp à renseigner dans « Tarifs et réglages ».', 'warn')}</a>` : ''}
-      <div class="list">
-        ${row({ icon: 'bell', title: 'Notifications', sub: 'Nouvelles commandes, courses, annonces', href: '#/messages' })}
-        ${row({ icon: 'sliders', title: 'Tarifs et réglages', sub: 'Prix, WhatsApp, maintenance', href: '#/admin/config' })}
-        ${row({ icon: 'map', title: 'Quartiers', sub: 'Zones et suppléments', href: '#/admin/zones' })}
-        ${row({ icon: 'bus', title: 'Agences et pharmacies', sub: 'Partenaires de livraison', href: '#/admin/partners' })}
+    const unread = (NZ.me && NZ.me.unread) || 0;
+    ctx.main(html`<div class="mt-wrap">
+      <div class="h-sec" style="margin-top:2px">Chaque jour</div>
+      <div class="mt-grid">
+        ${tile('#/admin/stats', 'chart', 'Mes chiffres', 'Commandes et argent', '', 'mt-stats')}
+        ${tile('#/new', 'plus', 'Passer une commande', 'Pour un client', 't2', 'mt-new')}
+        ${tile('#/admin/announce', 'mega', 'Annonces', 'Un message à tous', 't1', 'mt-announce')}
+        ${tile('#/messages', 'bell', 'Notifications', unread ? unread + ' non lue' + plural(unread, '', 's') : 'Rien de nouveau', 't3', 'mt-notif')}
       </div>
-      <div class="list">
-        ${row({ icon: 'users', title: 'Équipe et clients', sub: 'Comptes, rôles, codes PIN', href: '#/admin/users' })}
-        ${row({ icon: 'key', title: 'Invitations', sub: 'Codes pour livreurs et administrateurs', href: '#/admin/invites' })}
-        ${row({ icon: 'mega', title: 'Annonces', sub: 'Envoyer un message à tous', href: '#/admin/announce' })}
-        ${row({ icon: 'list', title: 'Journal d\'activité', sub: 'Qui a changé quoi, et quand', href: '#/admin/log' })}
+      <div class="h-sec">Réglages</div>
+      <div class="mt-grid">
+        ${tile('#/admin/config', 'sliders', 'Prix et réglages', 'Tarifs, WhatsApp', '', 'mt-config')}
+        ${tile('#/admin/zones', 'map', 'Quartiers', 'Zones et suppléments', 't1', 'mt-zones')}
+        ${tile('#/admin/partners', 'bus', 'Agences et pharmacies', 'La liste des clients', 't2', 'mt-partners')}
       </div>
-      <div class="list">
-        ${row({ icon: 'plus', title: 'Passer une commande', sub: 'Créer une commande pour un client', href: '#/new' })}
-        ${row({ icon: 'user', title: 'Mon compte', sub: NZ.user().name, href: '#/account' })}
+      <div class="h-sec">Équipe</div>
+      <div class="mt-grid">
+        ${tile('#/admin/users', 'users', 'Équipe et clients', 'Comptes et codes PIN', '', 'mt-users')}
+        ${tile('#/admin/invites', 'key', 'Invitations', 'Ajouter un livreur', 't1', 'mt-invites')}
+        ${tile('#/admin/log', 'list', 'Journal', 'Qui a changé quoi', 't2', 'mt-log')}
+      </div>
+      <div class="h-sec">Autres</div>
+      <div class="mt-grid">
+        ${tile('#/share', 'share', 'Partager l\'application', 'Code QR et lien', 't1', 'mt-share')}
+        ${tile('#/account', 'user', 'Mon compte', NZ.user().name, 't3', 'mt-account')}
       </div></div>`);
   }, A);
 })((window.NZ = window.NZ || {}));

@@ -5,7 +5,7 @@
    change cette ligne, donc le navigateur installe la nouvelle version tout seul. */
 'use strict';
 
-const BUILD = '6f727bc679';
+const BUILD = '2da0b59e38';
 const CACHE = 'nz-static-' + BUILD;
 
 const CORE = [
