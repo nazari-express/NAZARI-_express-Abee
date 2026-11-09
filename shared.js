@@ -168,6 +168,12 @@
 
   /* ---------- cases d'information ---------- */
   V.kv = (pairs) => html`<dl class="kv">${pairs.filter((p) => p && p[1] !== '' && p[1] != null).map(([k, v]) => html`<dt>${k}</dt><dd>${v}</dd>`)}</dl>`;
+  /* la pastille d'une agence / pharmacie : sa photo si on l'a, sinon le petit dessin (remplacé dès l'arrivée de la photo) */
+  V.ppBox = (p, o) => {
+    o = o || {};
+    const d = NZ.photoOf(p);
+    return html`<span class="pp${o.cls ? ' ' + o.cls : ''}${d ? ' has' : ''}" data-pp="${p.id}" data-pv="${p.pv || 0}">${d ? html`<img src="${d}" alt="">` : U.il(p.kind === 'pharmacy' ? 'pharmacy' : 'agency', o.icon || 46)}</span>`;
+  };
   V.notice = (text, kind, icon) => html`<div class="notice ${kind || ''}">${ic(icon || (kind === 'bad' ? 'alert' : kind === 'warn' ? 'info' : 'info'), 20)}<div>${text}</div></div>`;
 
   /* un quartier : liste + « Autre quartier… » */

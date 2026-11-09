@@ -5,7 +5,7 @@
    change cette ligne, donc le navigateur installe la nouvelle version tout seul. */
 'use strict';
 
-const BUILD = '2da0b59e38';
+const BUILD = '964e4dd698';
 const CACHE = 'nz-static-' + BUILD;
 
 const CORE = [
@@ -13,7 +13,7 @@ const CORE = [
   'ui.js', 'core.js', 'shared.js', 'voice.js', 'views-a.js', 'simple.js', 'chat.js',
   'driver.js', 'admin.js', 'admin2.js', 'boot.js'
 ];
-const EXTRA = ['icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
+const EXTRA = ['logo-nazari.webp', 'icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {

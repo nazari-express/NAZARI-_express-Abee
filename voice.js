@@ -207,7 +207,7 @@
     if (!file) return;
     U.toast('Photo en cours…', '');
     try {
-      const url = await fileToJpeg(file, key === 'id' ? { edge: 1400, q: 0.78 } : { edge: 1280, q: 0.72 });
+      const url = await fileToJpeg(file, key === 'id' ? { edge: 1400, q: 0.78 } : key === 'pp' ? { edge: 240, q: 0.8, maxChars: 45000 } : { edge: 1280, q: 0.72 });
       if (NZ.kit.onPhoto) NZ.kit.onPhoto(key, url);
     } catch (err) { U.toast('Cette photo ne peut pas être utilisée. Reprenez-la.', 'err'); }
   });

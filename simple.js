@@ -20,31 +20,93 @@
   const bigNext = (id, act, ok, label) => html`<div class="foot"><button type="button" class="btn primary xl full" id="${id}" data-act="${act}"${ok ? '' : raw(' disabled')}>${label || 'Suivant'}${ic('next', 28)}</button></div>`;
 
   /* =====================================================================
-     Bienvenue, connexion, création de compte (numéro + code secret, au clavier à gros chiffres)
+     Écran de connexion : fond doux, logo dans des cercles, numéro + code secret.
+     Création de compte : numéro puis code, au clavier à gros chiffres.
      ===================================================================== */
-  let AU = { mode: 'login', phone: '', pin: '', err: '' };
+  let AU = { mode: 'register', phone: '', pin: '', err: '' };
   const freshAU = (mode) => { AU = { mode, phone: '', pin: '', err: '' }; };
+  let LG = { phone: '', err: '' };                       // numéro / message à montrer à la prochaine ouverture de l'écran
+  const lastPhone = () => { const v = String(NZ.store.get('nz.lastphone', '') || ''); return ph8(v) ? v : ''; };
+  /* un numéro collé avec « +227 » ou « 00227 » est ramené à ses 8 chiffres ; un 9e chiffre tapé est ignoré */
+  const phoneDigits = (v) => { let d = String(v || '').replace(/\D/g, ''); if (d.startsWith('00227')) d = d.slice(5); else if (d.startsWith('227') && d.length > 8) d = d.slice(3); return d.slice(0, 8); };
+  const fmtPhone = (v) => phoneDigits(v).replace(/(\d{2})(?=\d)/g, '$1 ');
+  const lgErr = (m) => { const b = document.getElementById('lg-err'); if (b) b.innerHTML = str(errBox(m)); };
 
   NZ.route('/login', (ctx) => {
-    const [a, b] = NZ.brandParts();
-    ctx.plain(html`<div class="shell cl"><div class="land">
-      <svg class="scene" aria-hidden="true" preserveAspectRatio="xMidYMax slice"><use href="#scene-splash" width="100%" height="100%"/></svg><div class="veil"></div>
-      <div class="top"><svg class="logo" aria-hidden="true"><use href="#logo-mark"/></svg><div class="wm">${a}${b ? html`<b>${b}</b>` : ''}</div><div class="tag">${NZ.company().tagline}</div><div class="where">${ic('pin', 18)}Agadez</div></div>
-      <div class="lhero" aria-hidden="true"><div class="lbadge">${il('send', 170)}</div></div>
-      <div class="sheet2">
-        <div class="hi"><h1>Bienvenue !</h1>${VO.btn()}</div>
-        <p class="slog">Plus qu'une livraison, un service de confiance !</p>
-        <button type="button" class="btn primary xl full" data-act="au-start" data-mode="login" data-vid="l1">${il('lock', 36)}J'ai un compte</button>
-        <button type="button" class="btn ghost xl full" data-act="au-start" data-mode="register" data-vid="l2">${il('hello', 36)}Je suis nouveau</button>
-        <div class="mini"><a href="#/track">Suivre un colis</a><a href="#/staff">Équipe Nazari</a></div>
+    const co = NZ.company();
+    const wa = NZ.waHref('Bonjour ' + co.name + ', j\'ai besoin d\'aide.');
+    const phone = LG.phone || lastPhone();
+    const pre = LG.err;
+    LG = { phone: '', err: '' };
+    ctx.plain(html`<div class="shell cl"><div class="lgn">
+      <div class="lgn-bg" aria-hidden="true"></div>
+      <div class="lgn-top">
+        <a class="lpill lp-aide" href="#/help">Aide<b>?</b></a>
+        ${wa ? html`<a class="lpill lp-svc" href="${wa}" target="_blank" rel="noopener noreferrer">${ic('headset', 22)}Service Client</a>` : html`<a class="lpill lp-svc" href="#/help">${ic('headset', 22)}Service Client</a>`}
+      </div>
+      <div class="lgn-hero"><i class="ring r3" aria-hidden="true"></i><i class="ring r2" aria-hidden="true"></i><div class="ring r1"><div class="lg" role="img" aria-label="${co.name}"></div></div>${VO.btn()}</div>
+      <form class="lgn-form" data-submit="lg-login" novalidate>
+        <label class="lfld" id="lg-phone-box"><span class="flag" aria-hidden="true"></span><span class="cc">+227</span><input id="lg-phone" name="phone" type="tel" inputmode="numeric" autocomplete="username" maxlength="18" placeholder="Numéro de téléphone" aria-label="Numéro de téléphone" value="${fmtPhone(phone)}"></label>
+        <label class="lfld" id="lg-pin-box"><span class="lic">${ic('lock', 22)}</span><input id="lg-pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" maxlength="8" placeholder="Code secret" aria-label="Code secret"><button type="button" class="eye" data-act="lg-eye" aria-label="Afficher ou masquer le code">${ic('eye', 22)}</button></label>
+        <div id="lg-err">${errBox(pre)}</div>
+        <div class="lrow"><a class="forgot" href="${wa || '#/help'}" data-act="lg-forgot"${wa ? raw(' target="_blank" rel="noopener noreferrer"') : ''}>Code secret oublié ?</a></div>
+        <button type="submit" class="btn primary xl full lgo">Se connecter</button>
+      </form>
+      <div class="lgn-foot">
+        <p class="lnew">Vous n'avez pas de compte ? <button type="button" class="lnk" data-act="au-start" data-vid="l2">Créer un compte</button></p>
+        <div class="lmini"><a href="#/track">Suivre un colis</a><a href="#/staff">Équipe Nazari</a></div>
+        <p class="lver">Plus qu'une livraison, un service de confiance !</p>
       </div></div></div>`);
     VO.screen(() => [
-      { t: 'Bienvenue chez ' + NZ.company().name + '.' },
-      { t: 'Si vous avez déjà un compte, touchez ce bouton.', sel: '[data-vid="l1"]' },
-      { t: 'Si vous êtes nouveau, touchez celui-ci.', sel: '[data-vid="l2"]' },
+      { t: 'Bienvenue chez ' + co.name + '.' },
+      { t: 'Écrivez votre numéro de téléphone.', sel: '#lg-phone-box' },
+      { t: 'Puis votre code secret.', sel: '#lg-pin-box' },
+      { t: 'Touchez le bouton vert pour entrer.', sel: '.lgo' },
+      { t: 'Si vous êtes nouveau, touchez : créer un compte.', sel: '[data-vid="l2"]' },
     ]);
   }, { public: true, guestOnly: true });
-  NZ.act('au-start', (el) => { freshAU(el.dataset.mode); NZ.go(el.dataset.mode === 'login' ? '/login/phone' : '/register'); });
+
+  /* le numéro se range par paires (97 47 08 31) ; un numéro collé avec +227 est ramené à 8 chiffres ; le code ne garde que des chiffres */
+  document.addEventListener('input', (e) => {
+    const t = e.target;
+    if (!t || !t.id) return;
+    if (t.id === 'lg-phone') t.value = fmtPhone(t.value);
+    else if (t.id === 'lg-pin') t.value = t.value.replace(/\D/g, '');
+  });
+  NZ.act('lg-eye', (el) => {
+    const i = document.getElementById('lg-pin');
+    if (!i) return;
+    const show = i.type === 'password';
+    i.type = show ? 'text' : 'password';
+    el.innerHTML = str(ic(show ? 'eyeoff' : 'eye', 22));
+  });
+  /* « Code secret oublié ? » : le message WhatsApp reprend le numéro déjà écrit */
+  NZ.act('lg-forgot', (el) => {
+    const i = document.getElementById('lg-phone');
+    const p = i ? phoneDigits(i.value) : '';
+    const h = NZ.waHref('Bonjour, j\'ai oublié mon code secret ' + NZ.company().name + '.' + (ph8(p) ? ' Mon numéro : ' + p : ''));
+    if (h) el.href = h;
+  });
+  NZ.submit('lg-login', async (f) => {
+    const phone = phoneDigits(f.elements.phone.value);
+    const pin = String(f.elements.pin.value || '').replace(/\D/g, '');
+    if (!ph8(phone)) { lgErr('Entrez votre numéro de téléphone : 8 chiffres.'); VO.say('Votre numéro est incomplet.'); f.elements.phone.focus(); return; }
+    if (pin.length < 4) { lgErr('Entrez votre code secret : 4 chiffres ou plus.'); VO.say('Entrez votre code secret.'); f.elements.pin.focus(); return; }
+    lgErr('');
+    await U.busy(f.querySelector('button[type=submit]'), async () => {
+      try {
+        const r = await NZ.api('login', { phone, pin }, { anon: true });
+        NZ.store.set('nz.lastphone', phone);
+        await NZ.afterAuth(r);
+      } catch (e) {
+        lgErr(e.message); VO.say(e.message);
+        const p = document.getElementById('lg-pin');
+        if (p) { p.value = ''; p.focus(); }
+      }
+    });
+  });
+
+  NZ.act('au-start', () => { freshAU('register'); NZ.go('/register'); });
 
   function phoneScreen(ctx, o) {
     ctx.shell({ title: o.title, back: o.back, cls: 'cl', skeleton: false });
@@ -56,41 +118,24 @@
     </div>`);
     VO.screen(() => [{ t: o.q }, { t: 'Touchez les huit chiffres de votre numéro, puis le bouton vert.' }]);
   }
-  NZ.route('/login/phone', (ctx) => { AU.mode = 'login'; phoneScreen(ctx, { title: 'Connexion', back: '#/login', q: 'Quel est votre numéro de téléphone ?' }); }, { public: true, guestOnly: true });
   NZ.route('/register', (ctx) => { AU.mode = 'register'; phoneScreen(ctx, { title: 'Nouveau compte', back: '#/login', q: 'Quel est votre numéro de téléphone ?' }); }, { public: true, guestOnly: true });
   NZ.act('au-next', () => {
     if (!ph8(AU.phone)) return;
     AU.err = ''; AU.pin = '';
-    NZ.go(AU.mode === 'login' ? '/login/pin' : '/register/pin');
+    NZ.go('/register/pin');
   });
 
   function pinScreen(ctx, o) {
     ctx.shell({ title: o.title, back: o.back, cls: 'cl', skeleton: false });
-    const wa = NZ.waHref('Bonjour, j\'ai oublié mon code secret Nazari Express. Mon numéro : ' + AU.phone);
     ctx.main(html`<div>
       <div class="qrow"><span class="qill">${il('lock', 56)}</span><div class="qtxt"><h1 class="qt">${o.q}</h1>${o.sub ? html`<p class="qs">${o.sub}</p>` : ''}</div>${VO.btn()}</div>
       ${errBox(AU.err)}
       ${K.keypad({ kind: 'pin', value: '', min: 4, max: o.max || 8, onChange: (v) => { setReady('au-go', v.length >= 4); } })}
       <div class="foot"><button type="button" class="btn primary xl full" id="au-go" data-act="${o.act}" disabled>${o.label}${ic('next', 28)}</button>
-        ${o.random ? html`<button type="button" class="btn ghost xl full" data-act="au-random">${il('hello', 32)}Choisissez pour moi</button>` : ''}
-        ${o.forgot && wa ? html`<a class="link-big" href="${wa}" target="_blank" rel="noopener noreferrer">J'ai oublié mon code</a>` : ''}</div>
+        ${o.random ? html`<button type="button" class="btn ghost xl full" data-act="au-random">${il('hello', 32)}Choisissez pour moi</button>` : ''}</div>
     </div>`);
     VO.screen(() => [{ t: o.q }, { t: o.say }]);
   }
-  NZ.route('/login/pin', (ctx) => {
-    if (!ph8(AU.phone)) return NZ.go('/login/phone', { replace: true });
-    pinScreen(ctx, { title: 'Connexion', back: '#/login/phone', q: 'Quel est votre code secret ?', label: 'Entrer', act: 'au-login', forgot: true, say: 'Touchez vos chiffres secrets, puis le bouton vert.' });
-  }, { public: true, guestOnly: true });
-  NZ.act('au-login', async (el) => {
-    const pin = K.keypadValue();
-    if (pin.length < 4) return;
-    await U.busy(el, async () => {
-      try { await NZ.afterAuth(await NZ.api('login', { phone: AU.phone, pin }, { anon: true })); } catch (e) {
-        AU.err = e.message; VO.say(e.message);
-        NZ.dispatch();
-      }
-    });
-  });
 
   NZ.route('/register/pin', (ctx) => {
     if (!ph8(AU.phone)) return NZ.go('/register', { replace: true });
@@ -142,10 +187,11 @@
     await U.busy(el, async () => {
       try {
         const r = await NZ.api('register', { name: 'Client ' + AU.phone.slice(-4), phone: AU.phone, pin: AU.pin, invite: '' }, { anon: true });
+        NZ.store.set('nz.lastphone', AU.phone);
         U.toast('Compte créé. Bienvenue !', 'ok');
         await NZ.afterAuth(r);
       } catch (e) {
-        if (e.code === 'phone_taken') { AU.mode = 'login'; AU.pin = ''; AU.err = 'Ce numéro a déjà un compte. Entrez votre code secret.'; VO.say(AU.err); return NZ.go('/login/pin'); }
+        if (e.code === 'phone_taken') { LG = { phone: AU.phone, err: 'Ce numéro a déjà un compte. Entrez votre code secret.' }; VO.say(LG.err); return NZ.go('/login', { replace: true }); }
         AU.err = e.message; VO.say(e.message);
         NZ.go(e.code === 'invalid_phone' ? '/register' : '/register/pin', { replace: true });
       }
@@ -285,7 +331,7 @@
     const list = partners(kind);
     const q = isPh ? 'Quelle pharmacie ?' : D.flow === 'send' ? 'Quelle agence de transport ?' : 'Dans quelle agence est votre colis ?';
     const showOther = D.other || list.length === 0;
-    const tiles = list.map((p, i) => html`<button type="button" class="tile${D.partner && D.partner.id === p.id ? ' sel' : ''}" data-act="pick-partner" data-id="${p.id}" data-vid="p${i}">${il(isPh ? 'pharmacy' : 'agency', 48)}<span class="tt">${p.name}</span>${isPh && p.quartier ? html`<span class="ts">${p.quartier}</span>` : ''}</button>`);
+    const tiles = list.map((p, i) => html`<button type="button" class="tile${D.partner && D.partner.id === p.id ? ' sel' : ''}" data-act="pick-partner" data-id="${p.id}" data-vid="p${i}">${V.ppBox(p, { icon: 52 })}<span class="tt">${p.name}</span>${isPh && p.quartier ? html`<span class="ts">${p.quartier}</span>` : ''}</button>`);
     const other = showOther
       ? html`<div class="card-who" style="margin-top:12px">${U.field({ label: isPh ? 'Nom de la pharmacie' : 'Nom de l\'agence', bind: 'partnerName', value: D.partnerName, maxlength: 60, placeholder: isPh ? 'Ex. Pharmacie du Marché' : 'Ex. Rimbo Transport' })}</div>`
       : html`<button type="button" class="tile other" data-act="partner-other" style="margin-top:12px;width:100%;min-height:56px;flex-direction:row" data-vid="po">${ic('plus', 26)}<span class="tt">${isPh ? 'Une autre pharmacie' : 'Une autre agence'}</span></button>`;

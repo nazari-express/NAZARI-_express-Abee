@@ -74,6 +74,7 @@
     chart: '<path d="M4 20V11M10 20V4.5M16 20v-6.5M21.5 20h-19"/>',
     send: '<path d="M21.5 2.5 10.5 13.5M21.5 2.5 15 21.5l-4.5-8-8-4.5z"/>',
     eye: '<path d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    headset: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4.5" height="6.5" rx="1.8"/><rect x="16.5" y="14" width="4.5" height="6.5" rx="1.8"/><path d="M19 20.5c0 1.2-1.6 1.8-3.5 1.8H13"/>',
     eyeoff: '<path d="M3 3l18 18M10.6 5.2A9.6 9.6 0 0 1 12 5c6.2 0 10 7 10 7a17 17 0 0 1-3 3.8M6.6 6.7A17 17 0 0 0 2 12s3.8 7 10 7c1.6 0 3-.4 4.3-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
     dots: '<path d="M12 5h.01M12 12h.01M12 19h.01" stroke-width="3"/>',
     note: '<path d="M5 3.5h10l4 4v13H5z"/><path d="M14.5 3.5v4.5H19M8.5 12.5h7M8.5 16h7"/>',
@@ -183,7 +184,7 @@
   const empty = (icon, title, text, action) => html`<div class="empty"><div class="disc">${ic(icon, 30)}</div><div class="t">${title}</div><div>${text}</div>${action ? html`<div style="margin-top:16px">${action}</div>` : ''}</div>`;
   const skeleton = (n) => html`<div class="stack">${Array.from({ length: n || 3 }, () => html`<div class="skel" style="height:78px"></div>`)}</div>`;
   const row = (o) => {
-    const inner = html`<span class="disc sm ${o.tone || ''}">${ic(o.icon || 'box', 20)}</span><span class="grow"><span class="t">${o.title}${o.chip || ''}</span>${o.sub ? html`<span class="s" style="display:block">${o.sub}</span>` : ''}</span><span class="end">${o.end || ''}${o.noArrow ? '' : ic('chev', 18)}</span>`;
+    const inner = html`${o.lead ? o.lead : html`<span class="disc sm ${o.tone || ''}">${ic(o.icon || 'box', 20)}</span>`}<span class="grow"><span class="t">${o.title}${o.chip || ''}</span>${o.sub ? html`<span class="s" style="display:block">${o.sub}</span>` : ''}</span><span class="end">${o.end || ''}${o.noArrow ? '' : ic('chev', 18)}</span>`;
     const cls = 'row' + (o.unread ? ' unread' : '') + (o.wrap ? ' wrap' : '');
     if (o.href) return html`<a class="${cls}" href="${o.href}">${inner}</a>`;
     return html`<button type="button" class="${cls}" data-act="${o.act}" ${o.id ? raw('data-id="' + esc(o.id) + '"') : ''}>${inner}</button>`;

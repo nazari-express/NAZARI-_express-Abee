@@ -212,20 +212,34 @@
     const list = CAT.partners.filter((p) => p.kind === PT.kind);
     return html`<div class="filters"><button type="button" class="fchip${PT.kind === 'agency' ? ' on' : ''}" data-act="pt-kind" data-v="agency">Agences</button><button type="button" class="fchip${PT.kind === 'pharmacy' ? ' on' : ''}" data-act="pt-kind" data-v="pharmacy">Pharmacies</button></div>
       <div style="margin-bottom:14px">${btn({ label: PT.kind === 'agency' ? 'Ajouter une agence' : 'Ajouter une pharmacie', full: true, icon: 'plus', act: 'pt-edit' })}</div>
-      ${list.length ? html`<div class="list">${list.map((p) => row({ icon: p.kind === 'agency' ? 'bus' : 'cross', tone: p.active ? '' : 'red', title: p.name, sub: [p.quartier, p.kind === 'agency' && p.destinations.length ? p.destinations.length + ' ville' + (p.destinations.length > 1 ? 's' : '') : ''].filter(Boolean).join(' · ') || 'À compléter', act: 'pt-edit', id: p.id, end: p.active ? '' : html`<span class="chip cancelled">Masquée</span>` }))}</div>`
+      ${list.length ? html`<div class="list">${list.map((p) => row({ icon: p.kind === 'agency' ? 'bus' : 'cross', lead: p.pv ? V.ppBox(p, { cls: 'sm', icon: 30 }) : '', tone: p.active ? '' : 'red', title: p.name, sub: [p.quartier, p.kind === 'agency' && p.destinations.length ? p.destinations.length + ' ville' + (p.destinations.length > 1 ? 's' : '') : ''].filter(Boolean).join(' · ') || 'À compléter', act: 'pt-edit', id: p.id, end: p.active ? '' : html`<span class="chip cancelled">Masquée</span>` }))}</div>`
         : empty(PT.kind === 'agency' ? 'bus' : 'cross', PT.kind === 'agency' ? 'Aucune agence' : 'Aucune pharmacie', 'Ajoutez vos partenaires : les clients pourront les choisir dans une liste.')}`;
   };
   NZ.route('/admin/partners', async (ctx) => {
     ctx.shell({ title: 'Agences et pharmacies', back: '#/admin/more', tab: 'more' });
-    try { CAT = await NZ.api('admin.catalog'); ctx.main(ptView()); } catch (e) { ctx.fail(e); }
+    try { CAT = await NZ.api('admin.catalog'); ctx.main(ptView()); NZ.syncPhotos(CAT.partners); } catch (e) { ctx.fail(e); }
   }, A);
+  /* photo d'une agence : choisie dans la fiche (galerie ou appareil photo), envoyée avec « Enregistrer » */
+  const PP = { kind: 'agency', base: '', data: undefined };
+  const ppCur = () => (PP.data !== undefined ? PP.data : PP.base);
+  const ppPick = () => { const url = ppCur(); return html`<span class="pp big has">${url ? html`<img src="${url}" alt="">` : U.il(PP.kind === 'pharmacy' ? 'pharmacy' : 'agency', 62)}</span>
+      <div class="ppb"><label class="btn ghost sm"><input type="file" accept="image/*" hidden data-photo="pp">${ic('image', 20)}<span>${url ? 'Changer la photo' : 'Ajouter une photo'}</span></label>${url ? btn({ label: 'Retirer la photo', kind: 'ghost', size: 'sm', act: 'pp-clear' }) : ''}
+      <p class="small muted">Logo ou photo. Le client la voit dans la liste.</p></div>`; };
+  const ppPaint = () => { const el = document.getElementById('pp-pick'); if (el) el.innerHTML = str(ppPick()); };
+  (function hook() {
+    const base = NZ.kit.onPhoto;
+    NZ.kit.onPhoto = function (key, url) { if (key === 'pp') { PP.data = url; ppPaint(); return null; } return base ? base(key, url) : null; };
+  })();
+  NZ.act('pp-clear', () => { PP.data = ''; ppPaint(); });
   NZ.act('pt-kind', (el) => { PT.kind = el.dataset.v; setMain(ptView()); });
   NZ.act('pt-edit', (el) => {
     const p = el.dataset.id ? CAT.partners.find((x) => x.id === el.dataset.id) : { kind: PT.kind, name: '', phone: '', quartier: '', address: '', destinations: [], active: true };
     const known = CAT.quartiers.find((q) => q.name.toLowerCase() === String(p.quartier || '').toLowerCase());
     const qv = p.quartier ? (known ? known.name : '__other') : '';
     const ag = p.kind === 'agency';
+    PP.kind = p.kind; PP.base = NZ.photoOf(p) || ''; PP.data = undefined;
     U.openOverlay(html`<h2>${p.id ? 'Modifier' : (ag ? 'Nouvelle agence' : 'Nouvelle pharmacie')}</h2><form data-submit="pt-save" novalidate><input type="hidden" name="id" value="${p.id || ''}"><input type="hidden" name="kind" value="${p.kind}">
+      <div class="ppick" id="pp-pick">${ppPick()}</div>
       ${field({ label: 'Nom', name: 'name', value: p.name, maxlength: 60, placeholder: ag ? 'Ex. Rimbo Transport' : 'Ex. Pharmacie du Marché' })}
       ${field({ label: 'Téléphone', kind: 'phone', name: 'phone', value: p.phone, optional: true })}
       ${V.quartierField({ label: 'Quartier', id: 'pt-q-other', value: qv, other: qv === '__other' ? p.quartier : '', nameQ: 'quartier', nameO: 'other' })}
@@ -242,7 +256,16 @@
       try {
         const body = { id: d.id || undefined, kind: d.kind, name: d.name, phone: d.phone, quartier: q, address: d.address, active: !!d.active };
         if (d.kind === 'agency') body.destinations = (d.destinations || '').split(/\n|,/).map((s) => s.trim()).filter(Boolean);
-        CAT = await NZ.api('admin.partner.save', body); U.closeOverlay(); setMain(ptView()); NZ.loadConfig().catch(() => {}); U.toast('Enregistré', 'ok');
+        if (PP.data !== undefined) body.photo = PP.data;
+        CAT = await NZ.api('admin.partner.save', body);
+        let warn = '';
+        if (PP.data) {
+          const nm = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+          const np = d.id ? CAT.partners.find((x) => x.id === d.id) : CAT.partners.filter((x) => x.kind === d.kind && nm(x.name) === nm(d.name)).sort((a, b) => (b.pv || 0) - (a.pv || 0))[0];
+          if (np && np.pv) NZ.photoPut(np.id, np.pv, PP.data); else warn = 'Enregistré, mais la photo n\'a pas été gardée : la mise à jour de la base (morceau 7) n\'est pas encore faite.';
+        }
+        U.closeOverlay(); setMain(ptView()); NZ.loadConfig().catch(() => {}); NZ.syncPhotos(CAT.partners);
+        if (warn) U.toast(warn, 'err'); else U.toast('Enregistré', 'ok');
       } catch (e) { U.toast(e.message, 'err'); }
     });
   });

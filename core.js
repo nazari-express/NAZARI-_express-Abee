@@ -103,8 +103,41 @@
       const c = await api('config', {}, { anon: true, retry: 1 });
       NZ.config = c; store.set('nz.cfg', c);
     } catch (e) { if (!NZ.config) throw e; }
+    NZ.syncPhotos();
     return NZ.config;
   };
+
+  /* ---------- photos des agences et des pharmacies ----------
+     La liste (config) ne porte que la VERSION `pv` de chaque photo. Les images se chargent à part, une seule fois,
+     puis restent dans le téléphone. Une tuile se dessine avec la photo si on l'a, sinon avec le petit dessin ;
+     NZ.paintPhotos() remplace le dessin dès que la photo est arrivée. */
+  const PH = {};
+  const phGet = (id) => PH[id] || (PH[id] = store.get('nz.pp.' + id, null));
+  NZ.photoOf = (p) => { const r = p && p.pv ? phGet(p.id) : null; return r && r.v === p.pv && r.d ? r.d : ''; };
+  NZ.photoPut = (id, v, d) => { if (!id || !v || !d) return; PH[id] = { v, d }; store.set('nz.pp.' + id, PH[id]); };
+  NZ.paintPhotos = (root) => {
+    (root || document).querySelectorAll('.pp[data-pp]').forEach((el) => {
+      const d = NZ.photoOf({ id: el.dataset.pp, pv: Number(el.dataset.pv) || 0 });
+      if (!d) return;
+      const cur = el.querySelector('img');
+      if (cur && cur.getAttribute('src') === d) return;
+      const im = new Image();
+      im.alt = ''; im.src = d;
+      el.textContent = ''; el.appendChild(im); el.classList.add('has');
+    });
+  };
+  let phChain = Promise.resolve();
+  async function phSyncOnce(list) {
+    list = list || (NZ.config && NZ.config.partners) || [];
+    const need = list.filter((p) => p && p.pv && !NZ.photoOf(p)).map((p) => p.id);
+    for (let i = 0; i < need.length; i += 8) {
+      const got = await api('partner.photos', { ids: need.slice(i, i + 8) }, { anon: true });
+      Object.keys(got || {}).forEach((id) => { if (got[id] && got[id].d) NZ.photoPut(id, got[id].v, got[id].d); });
+      NZ.paintPhotos();
+    }
+  }
+  /* un appel à la fois ; hors connexion, ou base pas encore mise à jour : on garde les dessins, sans bruit */
+  NZ.syncPhotos = (list) => (phChain = phChain.then(() => phSyncOnce(list)).catch(() => {}));
   NZ.company = () => (NZ.config && NZ.config.company) || { name: 'Nazari Express', tagline: 'Vos colis, notre priorité', whatsapp: '', maintenance: false };
   NZ.prices = () => (NZ.config && NZ.config.prices) || { small: 1000, medium: 1500, large: 2500, xl: 5000, express: 1000, far: 500, pharmacy: 1000 };
   NZ.waHref = (text) => U.waLink(NZ.company().whatsapp, text);
