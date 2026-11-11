@@ -23,9 +23,9 @@
 
   /* ---------- API ---------- */
   const ENDPOINT = window.NZ_ENDPOINT || 'https://auzbestspfwjtityfucm.supabase.co/rest/v1/rpc/nz_api';
-  /* discussion, retrait avec carte d'identité : deuxième point d'entrée de la base */
+  /* discussion, retrait avec carte d'identité, alertes du téléphone : deuxième point d'entrée de la base */
   const ENDPOINT_PLUS = ENDPOINT.replace(/nz_api$/, 'nz_plus');
-  const PLUS_RE = /^(chat|pickup|id)\./;
+  const PLUS_RE = /^(chat|pickup|id|push)\./;
   const API_KEY = 'sb_publishable_e76S6aXK2Jx_nULSX9Ssxg_7qyB9TxM';
   class ApiError extends Error {
     constructor(code, message, extra) { super(message); this.code = code; Object.assign(this, extra || {}); }

@@ -5,15 +5,15 @@
    change cette ligne, donc le navigateur installe la nouvelle version tout seul. */
 'use strict';
 
-const BUILD = '964e4dd698';
+const BUILD = '9973203d8d';
 const CACHE = 'nz-static-' + BUILD;
 
 const CORE = [
   'index.html', 'app.css', 'simple.css', 'manifest.webmanifest',
-  'ui.js', 'core.js', 'shared.js', 'voice.js', 'views-a.js', 'simple.js', 'chat.js',
-  'driver.js', 'admin.js', 'admin2.js', 'boot.js'
+  'ui.js', 'core.js', 'shared.js', 'kit.js', 'views-a.js', 'simple.js', 'chat.js',
+  'driver.js', 'admin.js', 'admin2.js', 'push.js', 'boot.js'
 ];
-const EXTRA = ['logo-nazari.webp', 'icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
+const EXTRA = ['logo-nazari.webp', 'icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'badge-96.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -40,6 +40,41 @@ self.addEventListener('activate', (event) => {
     const keys = await caches.keys();
     await Promise.all(keys.filter((k) => k.startsWith('nz-static-') && k !== CACHE).map((k) => caches.delete(k)));
     await self.clients.claim();
+  })());
+});
+
+/* ---------- alertes sur le téléphone (Web Push) : l'application peut être fermée ---------- */
+self.addEventListener('push', (event) => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch (e) {
+    try { d = { body: event.data.text() }; } catch (e2) { d = {}; }
+  }
+  const title = String(d.title || 'Nazari Express').slice(0, 80);
+  const tag = typeof d.tag === 'string' && d.tag ? d.tag.slice(0, 60) : undefined;
+  event.waitUntil(self.registration.showNotification(title, {
+    body: String(d.body || '').slice(0, 240),
+    icon: 'icon-192.png',
+    badge: 'badge-96.png',
+    lang: 'fr',
+    tag,
+    renotify: !!tag,
+    data: { url: typeof d.url === 'string' ? d.url : '#/' },
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const raw = (event.notification.data && event.notification.data.url) || '#/';
+  const hash = /^#\/[\w\-./]*$/.test(raw) ? raw : '#/';
+  event.waitUntil((async () => {
+    const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const mine = list.find((c) => c.url.startsWith(self.registration.scope));
+    if (mine) {
+      try { await mine.focus(); } catch (e) { /* ignore */ }
+      mine.postMessage({ type: 'nz-open', url: hash });
+      return;
+    }
+    await self.clients.openWindow(self.registration.scope + hash);
   })());
 });
 

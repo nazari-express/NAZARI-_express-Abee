@@ -53,14 +53,6 @@ svg.il { display: block; flex: none; }
 .foot .btn + .btn { margin-top: 10px; }
 .link-big { display: block; text-align: center; font-size: 16px; font-weight: 700; color: var(--green-d); padding: 12px 8px; }
 
-/* ---------- bouton « écouter » et lecture ---------- */
-.say { flex: none; width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--green); color: #fff; display: grid; place-items: center; box-shadow: 0 4px 0 var(--green-dd); position: relative; }
-.say:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--green-dd); }
-.say.on { background: var(--gold); color: var(--forest); box-shadow: 0 4px 0 #b57f00; animation: pulse 1.2s ease-in-out infinite; }
-@keyframes pulse { 0%, 100% { box-shadow: 0 4px 0 #b57f00, 0 0 0 0 rgba(255, 183, 3, 0.6); } 50% { box-shadow: 0 4px 0 #b57f00, 0 0 0 12px rgba(255, 183, 3, 0); } }
-.speaking { outline: 5px solid var(--gold) !important; outline-offset: 3px; box-shadow: 0 0 0 10px rgba(255, 183, 3, 0.28) !important; border-radius: 24px; transition: outline 0.12s; }
-.speaking.k, .speaking.say { border-radius: 50%; }
-
 /* ---------- question + progression ---------- */
 .dots { display: flex; gap: 6px; margin: 0 2px 14px; }
 .dots i { flex: 1; height: 8px; border-radius: 4px; background: #eadfc6; }
@@ -138,6 +130,7 @@ svg.il { display: block; flex: none; }
 .k { height: 52px; border-radius: 16px; border: 2px solid var(--cl-line); background: #fff; font-size: 26px; font-weight: 800; color: var(--forest); box-shadow: 0 4px 0 var(--cl-line-d); display: grid; place-items: center; }
 .k:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--cl-line-d); background: var(--mint); }
 .k.fn { background: #f6ecd6; color: var(--green-d); font-size: 18px; }
+.k.sp { visibility: hidden; pointer-events: none; }
 .code-big { display: flex; justify-content: center; gap: 8px; margin: 6px 0 14px; }
 .code-big span { width: 50px; height: 62px; border-radius: 14px; background: #fff; border: 3px solid var(--green); display: grid; place-items: center; font-size: 38px; font-weight: 800; color: var(--forest); box-shadow: 0 5px 0 var(--green-dd); }
 .err-box { display: flex; align-items: flex-start; gap: 10px; background: #fde9e6; color: #8f1d14; border: 2px solid #f3b9b2; border-radius: 16px; padding: 10px 14px; font-size: 15.5px; font-weight: 700; margin-bottom: 16px; }
@@ -286,10 +279,6 @@ svg.il { display: block; flex: none; }
 .forgot { font-size: 15.5px; font-weight: 800; color: var(--green-d); padding: 8px 4px; }
 .shell.cl .btn.lgo { min-height: 58px; font-size: 19.5px; letter-spacing: 0; }
 .lgn-foot { margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; flex: none; }
-.lgn-hero .say { position: absolute; right: -3%; bottom: 3%; width: clamp(40px, 22%, 54px); height: auto; aspect-ratio: 1; background: var(--sun); color: var(--forest); box-shadow: 0 4px 0 var(--sun-d); }
-.lgn-hero .say:active { box-shadow: 0 1px 0 var(--sun-d); }
-.lgn-hero .say.on { background: var(--green); color: #fff; box-shadow: 0 4px 0 var(--green-dd); animation: pulseg 1.2s ease-in-out infinite; }
-@keyframes pulseg { 0%, 100% { box-shadow: 0 4px 0 var(--green-dd), 0 0 0 0 rgba(1, 122, 61, 0.45); } 50% { box-shadow: 0 4px 0 var(--green-dd), 0 0 0 12px rgba(1, 122, 61, 0); } }
 .lnew { margin: 0; font-size: 16px; font-weight: 600; color: var(--cl-soft); }
 .lnk { border: 0; background: none; padding: 8px 2px; font: inherit; font-weight: 800; color: var(--green-d); text-decoration: underline; text-underline-offset: 3px; }
 .lmini { display: flex; justify-content: center; gap: 22px; font-size: 15.5px; font-weight: 700; }
@@ -306,7 +295,6 @@ svg.il { display: block; flex: none; }
 @media (min-height: 760px) { .lgn-hero { width: clamp(150px, 31dvh, 290px); } }
 @media (max-height: 700px) { .lver { display: none; } .lgn-foot { padding-top: 8px; } .lnk { padding: 4px 2px; } }
 @media (max-height: 600px) { .lgn-hero { width: clamp(90px, 21dvh, 200px); margin-top: 4px; margin-bottom: 4px; } .lgn-form { gap: 10px; } .lgn-foot { gap: 4px; } .lmini a { padding: 3px 2px; } }
-@media (prefers-reduced-motion: reduce) { .lgn-hero .say.on { animation: none; } }
 
 /* ---------- discussions côté équipe ---------- */
 .thread { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: #fff; border: 2px solid var(--line-2); border-radius: 16px; padding: 12px; margin-bottom: 10px; box-shadow: var(--shadow); color: var(--ink); }
@@ -346,7 +334,7 @@ svg.il { display: block; flex: none; }
   .k { height: 46px; font-size: 24px; }
   .price-big .n { font-size: 34px; }
 }
-@media (prefers-reduced-motion: reduce) { .say.on { animation: none; } * { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
 /* ---------- pastille d'une agence / pharmacie : photo si on l'a, sinon le petit dessin ---------- */
 .pp { flex: none; width: 64px; height: 64px; display: grid; place-items: center; overflow: hidden; }
@@ -360,3 +348,16 @@ svg.il { display: block; flex: none; }
 .ppick .ppb .btn { gap: 6px; }
 .ppick .ppb p { margin: 0; line-height: 1.3; }
 .tile .pp { margin-bottom: 2px; }
+
+/* ---------- alertes sur le téléphone ---------- */
+.pushask { text-align: center; padding: 2px 2px 4px; }
+.pushask h2 { margin: 14px 0 8px; }
+.pushask p { margin: 0 0 20px; line-height: 1.45; }
+.pa-ic { display: inline-grid; place-items: center; width: 68px; height: 68px; border-radius: 50%; background: var(--mint, #e4f4ea); color: var(--green, #017a3d); flex: none; }
+.pa-ic.ok { background: #d9f3e2; color: #0f7a3a; }
+.ap-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.ap-head .pa-ic { width: 52px; height: 52px; }
+.ap-msg { margin-top: 14px; padding-top: 14px; border-top: 1.5px solid var(--line, #dce7e0); }
+.ap-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
+.ap-on { display: flex; align-items: center; gap: 10px; }
+.ap-del { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 6px; border: 0; background: none; color: var(--red, #b3261e); font: inherit; font-weight: 700; cursor: pointer; }

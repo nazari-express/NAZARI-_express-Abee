@@ -282,7 +282,7 @@
   NZ.route('/admin/announce', (ctx) => {
     ctx.shell({ title: 'Annonces', back: '#/admin/more', tab: 'more', skeleton: false });
     ctx.main(html`<form class="card" data-submit="announce" novalidate>
-      <p class="muted" style="margin-bottom:14px">Le message apparaît dans la rubrique « Messages » de chaque personne.</p>
+      <p class="muted" style="margin-bottom:14px">Le message apparaît dans la rubrique « Messages » de chaque personne, et sur son téléphone si elle a activé les alertes.</p>
       ${field({ label: 'Titre', name: 'title', maxlength: 60, placeholder: 'Ex. Nouveaux tarifs dès lundi' })}
       ${field({ label: 'Message', kind: 'textarea', name: 'body', rows: 4, maxlength: 300, optional: true })}
       ${field({ label: 'Destinataires', kind: 'select', name: 'audience', value: 'clients', options: [{ v: 'clients', t: 'Tous les clients' }, { v: 'drivers', t: 'Livreurs et équipe' }, { v: 'all', t: 'Tout le monde' }] })}
@@ -305,7 +305,7 @@
     'invite.create': ['Invitation créée', 'key'], 'invite.revoke': ['Invitation annulée', 'key'], 'config.set': ['Réglages modifiés', 'sliders'],
     'quartier.save': ['Quartier enregistré', 'map'], 'quartier.delete': ['Quartier supprimé', 'map'],
     'partner.save': ['Partenaire enregistré', 'bus'], 'partner.delete': ['Partenaire supprimé', 'bus'], 'announce': ['Annonce envoyée', 'mega'],
-    'id.view': ['Carte d\'identité consultée', 'eye'],
+    'id.view': ['Carte d\'identité consultée', 'eye'], 'push.save': ['Alertes du téléphone modifiées', 'bell'],
   };
   const CFG_LABEL = { price_small: 'Prix 0–5 kg', price_medium: 'Prix 5–10 kg', price_large: 'Prix 10–20 kg', price_xl: 'Prix + de 20 kg', express_fee: 'Express', far_fee: 'Zone éloignée', pharmacy_fee: 'Pharmacie' };
   const AUD = { clients: 'aux clients', drivers: 'à l\'équipe', all: 'à tout le monde' };

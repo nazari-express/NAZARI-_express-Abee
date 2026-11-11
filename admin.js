@@ -296,6 +296,7 @@
         ${tile('#/admin/config', 'sliders', 'Prix et réglages', 'Tarifs, WhatsApp', '', 'mt-config')}
         ${tile('#/admin/zones', 'map', 'Quartiers', 'Zones et suppléments', 't1', 'mt-zones')}
         ${tile('#/admin/partners', 'bus', 'Agences et pharmacies', 'La liste des clients', 't2', 'mt-partners')}
+        ${tile('#/admin/push', 'bell', 'Alertes du téléphone', 'Message du jour', 't3', 'mt-push')}
       </div>
       <div class="h-sec">Équipe</div>
       <div class="mt-grid">

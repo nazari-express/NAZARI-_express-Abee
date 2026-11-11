@@ -1,9 +1,9 @@
 /* Nazari Express — côté client, pensé pour ceux qui lisent peu :
    bienvenue, connexion au clavier à gros chiffres, accueil en dessins, commande en étapes (une question par écran),
-   suivi, compte. Tout peut être lu à voix haute (bouton haut-parleur). */
+   suivi, compte. */
 (function (NZ) {
   'use strict';
-  const U = NZ.ui, V = NZ.v, VO = NZ.voice, K = NZ.kit;
+  const U = NZ.ui, V = NZ.v, K = NZ.kit;
   const { html, raw, str, ic, il, btn, fcfa, fwhen } = U;
   const $ = (s) => document.querySelector(s);
 
@@ -44,7 +44,7 @@
         <a class="lpill lp-aide" href="#/help">Aide<b>?</b></a>
         ${wa ? html`<a class="lpill lp-svc" href="${wa}" target="_blank" rel="noopener noreferrer">${ic('headset', 22)}Service Client</a>` : html`<a class="lpill lp-svc" href="#/help">${ic('headset', 22)}Service Client</a>`}
       </div>
-      <div class="lgn-hero"><i class="ring r3" aria-hidden="true"></i><i class="ring r2" aria-hidden="true"></i><div class="ring r1"><div class="lg" role="img" aria-label="${co.name}"></div></div>${VO.btn()}</div>
+      <div class="lgn-hero"><i class="ring r3" aria-hidden="true"></i><i class="ring r2" aria-hidden="true"></i><div class="ring r1"><div class="lg" role="img" aria-label="${co.name}"></div></div></div>
       <form class="lgn-form" data-submit="lg-login" novalidate>
         <label class="lfld" id="lg-phone-box"><span class="flag" aria-hidden="true"></span><span class="cc">+227</span><input id="lg-phone" name="phone" type="tel" inputmode="numeric" autocomplete="username" maxlength="18" placeholder="Numéro de téléphone" aria-label="Numéro de téléphone" value="${fmtPhone(phone)}"></label>
         <label class="lfld" id="lg-pin-box"><span class="lic">${ic('lock', 22)}</span><input id="lg-pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" maxlength="8" placeholder="Code secret" aria-label="Code secret"><button type="button" class="eye" data-act="lg-eye" aria-label="Afficher ou masquer le code">${ic('eye', 22)}</button></label>
@@ -57,13 +57,6 @@
         <div class="lmini"><a href="#/track">Suivre un colis</a><a href="#/staff">Équipe Nazari</a></div>
         <p class="lver">Plus qu'une livraison, un service de confiance !</p>
       </div></div></div>`);
-    VO.screen(() => [
-      { t: 'Bienvenue chez ' + co.name + '.' },
-      { t: 'Écrivez votre numéro de téléphone.', sel: '#lg-phone-box' },
-      { t: 'Puis votre code secret.', sel: '#lg-pin-box' },
-      { t: 'Touchez le bouton vert pour entrer.', sel: '.lgo' },
-      { t: 'Si vous êtes nouveau, touchez : créer un compte.', sel: '[data-vid="l2"]' },
-    ]);
   }, { public: true, guestOnly: true });
 
   /* le numéro se range par paires (97 47 08 31) ; un numéro collé avec +227 est ramené à 8 chiffres ; le code ne garde que des chiffres */
@@ -90,8 +83,8 @@
   NZ.submit('lg-login', async (f) => {
     const phone = phoneDigits(f.elements.phone.value);
     const pin = String(f.elements.pin.value || '').replace(/\D/g, '');
-    if (!ph8(phone)) { lgErr('Entrez votre numéro de téléphone : 8 chiffres.'); VO.say('Votre numéro est incomplet.'); f.elements.phone.focus(); return; }
-    if (pin.length < 4) { lgErr('Entrez votre code secret : 4 chiffres ou plus.'); VO.say('Entrez votre code secret.'); f.elements.pin.focus(); return; }
+    if (!ph8(phone)) { lgErr('Entrez votre numéro de téléphone : 8 chiffres.'); f.elements.phone.focus(); return; }
+    if (pin.length < 4) { lgErr('Entrez votre code secret : 4 chiffres ou plus.'); f.elements.pin.focus(); return; }
     lgErr('');
     await U.busy(f.querySelector('button[type=submit]'), async () => {
       try {
@@ -99,7 +92,7 @@
         NZ.store.set('nz.lastphone', phone);
         await NZ.afterAuth(r);
       } catch (e) {
-        lgErr(e.message); VO.say(e.message);
+        lgErr(e.message);
         const p = document.getElementById('lg-pin');
         if (p) { p.value = ''; p.focus(); }
       }
@@ -111,12 +104,11 @@
   function phoneScreen(ctx, o) {
     ctx.shell({ title: o.title, back: o.back, cls: 'cl', skeleton: false });
     ctx.main(html`<div>
-      <div class="qrow"><span class="qill">${il('phone', 56)}</span><div class="qtxt"><h1 class="qt">${o.q}</h1></div>${VO.btn()}</div>
+      <div class="qrow"><span class="qill">${il('phone', 56)}</span><div class="qtxt"><h1 class="qt">${o.q}</h1></div></div>
       ${errBox(AU.err)}
       ${K.keypad({ kind: 'phone', value: AU.phone, onChange: (v) => { AU.phone = v; setReady('au-next', v.length === 8); } })}
       ${bigNext('au-next', 'au-next', AU.phone.length === 8)}
     </div>`);
-    VO.screen(() => [{ t: o.q }, { t: 'Touchez les huit chiffres de votre numéro, puis le bouton vert.' }]);
   }
   NZ.route('/register', (ctx) => { AU.mode = 'register'; phoneScreen(ctx, { title: 'Nouveau compte', back: '#/login', q: 'Quel est votre numéro de téléphone ?' }); }, { public: true, guestOnly: true });
   NZ.act('au-next', () => {
@@ -128,34 +120,33 @@
   function pinScreen(ctx, o) {
     ctx.shell({ title: o.title, back: o.back, cls: 'cl', skeleton: false });
     ctx.main(html`<div>
-      <div class="qrow"><span class="qill">${il('lock', 56)}</span><div class="qtxt"><h1 class="qt">${o.q}</h1>${o.sub ? html`<p class="qs">${o.sub}</p>` : ''}</div>${VO.btn()}</div>
+      <div class="qrow"><span class="qill">${il('lock', 56)}</span><div class="qtxt"><h1 class="qt">${o.q}</h1>${o.sub ? html`<p class="qs">${o.sub}</p>` : ''}</div></div>
       ${errBox(AU.err)}
       ${K.keypad({ kind: 'pin', value: '', min: 4, max: o.max || 8, onChange: (v) => { setReady('au-go', v.length >= 4); } })}
       <div class="foot"><button type="button" class="btn primary xl full" id="au-go" data-act="${o.act}" disabled>${o.label}${ic('next', 28)}</button>
         ${o.random ? html`<button type="button" class="btn ghost xl full" data-act="au-random">${il('hello', 32)}Choisissez pour moi</button>` : ''}</div>
     </div>`);
-    VO.screen(() => [{ t: o.q }, { t: o.say }]);
   }
 
   NZ.route('/register/pin', (ctx) => {
     if (!ph8(AU.phone)) return NZ.go('/register', { replace: true });
-    pinScreen(ctx, { title: 'Nouveau compte', back: '#/register', q: 'Choisissez un code secret', sub: '4 chiffres que vous retenez bien.', max: 4, label: 'Suivant', act: 'au-pin1', random: true, say: 'Touchez quatre chiffres que vous retenez bien. Ou touchez le bouton du bas : nous choisissons pour vous.' });
+    pinScreen(ctx, { title: 'Nouveau compte', back: '#/register', q: 'Choisissez un code secret', sub: '4 chiffres que vous retenez bien.', max: 4, label: 'Suivant', act: 'au-pin1', random: true });
   }, { public: true, guestOnly: true });
   NZ.act('au-pin1', () => {
     const pin = K.keypadValue();
     if (pin.length !== 4) { AU.err = 'Le code doit avoir 4 chiffres.'; return NZ.dispatch(); }
-    if (NZ.weakPin(pin)) { AU.err = NZ.WEAK_PIN_MSG; VO.say(AU.err); return NZ.dispatch(); }
+    if (NZ.weakPin(pin)) { AU.err = NZ.WEAK_PIN_MSG; return NZ.dispatch(); }
     AU.pin = pin; AU.err = '';
     NZ.go('/register/again');
   });
   NZ.route('/register/again', (ctx) => {
     if (!ph8(AU.phone) || AU.pin.length !== 4) return NZ.go('/register', { replace: true });
-    pinScreen(ctx, { title: 'Nouveau compte', back: '#/register/pin', q: 'Refaites le même code', sub: 'Pour être sûr de ne pas se tromper.', max: 4, label: 'Créer mon compte', act: 'au-pin2', say: 'Touchez le même code une deuxième fois.' });
+    pinScreen(ctx, { title: 'Nouveau compte', back: '#/register/pin', q: 'Refaites le même code', sub: 'Pour être sûr de ne pas se tromper.', max: 4, label: 'Créer mon compte', act: 'au-pin2' });
   }, { public: true, guestOnly: true });
   NZ.act('au-pin2', async (el) => {
     const again = K.keypadValue();
     if (again.length !== 4) return;
-    if (again !== AU.pin) { AU.err = 'Les deux codes sont différents. Recommencez.'; AU.pin = ''; VO.say(AU.err); return NZ.go('/register/pin', { replace: true }); }
+    if (again !== AU.pin) { AU.err = 'Les deux codes sont différents. Recommencez.'; AU.pin = ''; return NZ.go('/register/pin', { replace: true }); }
     await createAccount(el);
   });
   NZ.act('au-random', () => {
@@ -173,13 +164,12 @@
     if (!ph8(AU.phone) || AU.pin.length !== 4) return NZ.go('/register', { replace: true });
     ctx.shell({ title: 'Votre code secret', back: '#/register/pin', cls: 'cl', skeleton: false });
     ctx.main(html`<div>
-      <div class="qrow"><span class="qill">${il('lock', 56)}</span><div class="qtxt"><h1 class="qt">Votre code secret</h1></div>${VO.btn()}</div>
+      <div class="qrow"><span class="qill">${il('lock', 56)}</span><div class="qtxt"><h1 class="qt">Votre code secret</h1></div></div>
       ${errBox(AU.err)}
       <div class="code-big" aria-label="Votre code secret">${AU.pin.split('').map((d) => html`<span>${d}</span>`)}</div>
       <div class="note-soft" style="margin-top:0">${ic('info', 24)}<span>Notez ces 4 chiffres ou prenez une photo de l'écran. Vous en aurez besoin pour vous connecter.</span></div>
       <div class="foot"><button type="button" class="btn primary xl full" data-act="au-code-ok">J'ai noté mon code${ic('check', 28)}</button></div>
     </div>`);
-    VO.screen(() => [{ t: 'Votre code secret est : ' + AU.pin.split('').join(', ') + '. Notez-le bien. Quand c\'est fait, touchez le bouton vert.' }]);
   }, { public: true, guestOnly: true });
   NZ.act('au-code-ok', (el) => createAccount(el));
 
@@ -191,8 +181,8 @@
         U.toast('Compte créé. Bienvenue !', 'ok');
         await NZ.afterAuth(r);
       } catch (e) {
-        if (e.code === 'phone_taken') { LG = { phone: AU.phone, err: 'Ce numéro a déjà un compte. Entrez votre code secret.' }; VO.say(LG.err); return NZ.go('/login', { replace: true }); }
-        AU.err = e.message; VO.say(e.message);
+        if (e.code === 'phone_taken') { LG = { phone: AU.phone, err: 'Ce numéro a déjà un compte. Entrez votre code secret.' }; return NZ.go('/login', { replace: true }); }
+        AU.err = e.message;
         NZ.go(e.code === 'invalid_phone' ? '/register' : '/register/pin', { replace: true });
       }
     });
@@ -233,7 +223,7 @@
     const P = NZ.prices(), co = NZ.company();
     const first = firstOf(NZ.user());
     return html`<div class="home">
-      ${hello ? html`<div class="hello"><div class="ht"><h1>Bonjour${first ? ' ' + first : ''} !</h1><p>Que voulez-vous faire ?</p></div>${VO.btn()}</div>` : ''}
+      ${hello ? html`<div class="hello"><div class="ht"><h1>Bonjour${first ? ' ' + first : ''} !</h1><p>Que voulez-vous faire ?</p></div></div>` : ''}
       ${co.maintenance ? html`<div class="err-box">${ic('alert', 26)}<div>Les nouvelles commandes sont suspendues pour le moment.</div></div>` : ''}
       ${services(P)}
     </div>`;
@@ -242,12 +232,6 @@
     ctx.shell({ brand: true, menu: false, right: '', cls: 'cl', tab: 'home', skeleton: false });
     ctx.main(homeView(true));
     const P = NZ.prices();
-    VO.screen(() => [
-      { t: 'Bonjour. Que voulez-vous faire ?' },
-      { t: 'Envoyer un colis à l\'agence de transport. À partir de ' + VO.fcfa(P.small) + '.', sel: '[data-vid="h1"]' },
-      { t: 'Récupérer un colis arrivé à l\'agence. À partir de ' + VO.fcfa(P.small) + '.', sel: '[data-vid="h2"]' },
-      { t: 'Pharmacie : vos médicaments chez vous. À partir de ' + VO.fcfa(P.pharmacy) + '.', sel: '[data-vid="h3"]' },
-    ]);
     /* seuls changements possibles sur cet écran : la mise en maintenance et les prix */
     const sigOf = () => String(!!NZ.company().maintenance) + JSON.stringify(NZ.prices());
     let sig = sigOf();
@@ -264,7 +248,6 @@
   NZ.route('/new', (ctx) => {
     ctx.shell({ title: 'Nouvelle commande', back: NZ.homeHash(), cls: 'cl', tab: 'home', skeleton: false });
     ctx.main(homeView(false));
-    VO.screen(() => [{ t: 'Choisissez le type de commande.' }]);
   });
 
   /* =====================================================================
@@ -338,10 +321,9 @@
     return {
       q, body: html`<div class="${list.length > 1 ? 'grid2' : 'grid1'}">${tiles}</div>${other}`,
       foot: showOther ? bigNext('wz-next', 'wiz-next', READY[isPh ? 'pharmacy' : 'agency'](D)) : '',
-      voice: [{ t: q }].concat(list.map((p, i) => ({ t: p.name + (isPh && p.quartier ? ', ' + p.quartier : ''), sel: '[data-vid="p' + i + '"]' })), [{ t: showOther ? 'Ou écrivez le nom ici.' : (isPh ? 'Ou une autre pharmacie.' : 'Ou une autre agence.'), sel: showOther ? null : '[data-vid="po"]' }]),
     };
   }
-  function whoStep(D, side, q, sayText) {
+  function whoStep(D, side, q) {
     const P = D[side];
     return {
       q, il: side === 'sender' ? 'from' : 'to',
@@ -352,7 +334,6 @@
           ${U.field({ label: 'Numéro de téléphone', kind: 'phone', bind: side + '.phone', value: P.phone })}
         </div>`,
       foot: bigNext('wz-next', 'wiz-next', READY[side](D)),
-      voice: [{ t: q }, { t: sayText }],
     };
   }
 
@@ -372,7 +353,6 @@
       return {
         q, body: html`<div class="grid2">${tiles}</div>${other}`,
         foot: showOther ? bigNext('wz-next', 'wiz-next', READY.city(D)) : '',
-        voice: [{ t: q }].concat(cities.map((c, i) => ({ t: c, sel: '[data-vid="c' + i + '"]' })), [{ t: 'Ou une autre ville.', sel: showOther ? null : '[data-vid="co"]' }]),
       };
     },
 
@@ -382,12 +362,11 @@
       const tiles = SIZES.map((s, i) => html`<button type="button" class="tile size${D.size === s.key ? ' sel' : ''}" data-act="pick-size" data-v="${s.key}" data-vid="s${i}">${il(s.il, 96)}<span class="tt">${s.name}</span><span class="ts">${s.range}</span><span class="tp">${s.key === 'xl' ? html`dès ${fcfa(P.xl)}` : fcfa(P[s.key])}</span></button>`);
       return {
         q, sub: 'Touchez le dessin qui ressemble à votre colis.', body: html`<div class="grid2">${tiles}</div>`, foot: '',
-        voice: [{ t: q }].concat(SIZES.map((s, i) => ({ t: s.name + ', ' + s.range.replace(' à ', ' à ') + '. ' + VO.fcfa(s.key === 'xl' ? P.xl : P[s.key]) + (s.key === 'xl' ? ', prix confirmé par l\'équipe' : '') + '.', sel: '[data-vid="s' + i + '"]' }))),
       };
     },
 
-    sender: (D) => whoStep(D, 'sender', 'Qui envoie le colis ?', 'Écrivez le prénom, le nom et le numéro de téléphone de celui qui envoie.'),
-    recip: (D) => whoStep(D, 'recip', 'Qui reçoit le colis ?', 'Écrivez le prénom, le nom et le numéro de téléphone de celui qui reçoit.'),
+    sender: (D) => whoStep(D, 'sender', 'Qui envoie le colis ?'),
+    recip: (D) => whoStep(D, 'recip', 'Qui reçoit le colis ?'),
 
     where(D) {
       const q = D.flow === 'send' ? 'Où venons-nous prendre le colis ?' : D.flow === 'pickup' ? 'Où apportons-nous le colis ?' : 'Où devons-nous livrer ?';
@@ -402,31 +381,26 @@
           body: html`<div class="grid2">${Q.map((x, i) => html`<button type="button" class="tile q${D.quartier === x.name ? ' sel' : ''}" data-act="pick-q" data-v="${x.name}" data-vid="q${i}">${ic('pin', 26)}<span class="tt">${x.name}</span></button>`)}
             <button type="button" class="tile call${callSel ? ' sel' : ''}" data-act="loc-callme" data-vid="qc">${ic('phone', 28)}<span class="tt">À préciser : appeler le client</span></button></div>`,
           foot,
-          voice: [{ t: q }].concat(Q.map((x, i) => ({ t: x.name, sel: '[data-vid="q' + i + '"]' })), [{ t: 'Ou touchez ce bouton si le quartier est à préciser par téléphone.', sel: '[data-vid="qc"]' }]),
         };
       }
       const err = D.locErr ? html`<div class="err-box" style="margin-bottom:14px">${ic('alert', 26)}<div>${D.locErr}</div></div>` : '';
-      let main, voice;
+      let main;
       if (wait) {
         main = html`<div class="locbox wait"><span class="spin dark" style="width:34px;height:34px;border-width:4px"></span><b>Je cherche votre position…</b><span>Cela peut prendre quelques secondes.</span></div>`;
-        voice = [{ t: 'Je cherche votre position. Patientez quelques secondes.' }];
       } else if (D.loc) {
         const poor = D.loc.acc > 500;
         const note = (D.loc.far ? 'Vous êtes loin du centre : un petit supplément s\'ajoute. ' : '') + (poor ? 'La précision est faible (environ ' + D.loc.acc + ' mètres). Pour mieux faire, sortez dehors puis touchez « Changer ma position ». Sinon, continuez : le livreur vous appellera.' : D.loc.acc ? 'Précision : environ ' + D.loc.acc + ' mètres.' : '');
         main = html`${err}<div class="locbox ok">${ic('check', 46)}<b>Position enregistrée</b>${note ? html`<span>${note}</span>` : ''}</div>
           <button type="button" class="btn ghost full" data-act="loc-get" data-vid="lg" style="margin-top:14px">${ic('pin', 26)}Changer ma position</button>`;
-        voice = [{ t: q }, { t: 'Votre position est enregistrée. Touchez le bouton vert Suivant pour continuer.', sel: '#wz-next' }];
       } else {
         main = html`<div class="lochero">${il('location', 112)}</div>${err}
           <button type="button" class="btn primary xl full" data-act="loc-get" data-vid="lg">${ic('pin', 30)}${D.locErr ? 'Réessayer' : 'Partager ma position'}</button>`;
-        voice = [{ t: q }, { t: 'Touchez le grand bouton vert pour partager votre position. Le livreur viendra directement chez vous.', sel: '[data-vid="lg"]' }];
       }
       const callMe = html`<button type="button" class="btn ghost full callme${callSel ? ' sel' : ''}" data-act="loc-callme" data-vid="qc" style="margin-top:10px">${il('phone', 32)}Appelez-moi à la place</button>`;
-      if (!D.loc) voice.push({ t: 'Si votre téléphone ne trouve pas votre position, touchez ce bouton : nous vous appelons.', sel: '[data-vid="qc"]' });
       return {
         q, sub: D.loc || wait ? '' : 'Le téléphone va demander la permission : touchez « Autoriser ».',
         body: html`${main}${D.loc ? '' : callMe}`,
-        foot, voice,
+        foot,
       };
     },
 
@@ -438,7 +412,6 @@
           ${K.photoButtons('id', { cam: D.photo ? 'Reprendre la photo' : 'Prendre la photo' })}
           <div class="note-soft">${ic('lock', 24)}<span>Seuls Nazari Express et votre livreur la voient. La photo est effacée un jour après la livraison.</span></div>`,
         foot: bigNext('wz-next', 'wiz-next', READY.idcard(D)),
-        voice: [{ t: q }, { t: 'Posez la carte sur une table, bien à plat. Touchez le bouton vert pour la photographier. Tout le texte doit être lisible.' }],
       };
     },
 
@@ -448,7 +421,6 @@
         q, il: 'phone', sub: 'Le livreur vous appelle à ce numéro.',
         body: K.keypad({ kind: 'phone', value: D.myPhone, onChange: (v) => { D.myPhone = v; setReady('wz-next', ph8(v)); } }),
         foot: bigNext('wz-next', 'wiz-next', READY.myphone(D)),
-        voice: [{ t: q }, { t: 'Vérifiez votre numéro. Vous pouvez le changer avec les chiffres.' }],
       };
     },
 
@@ -467,7 +439,6 @@
       return {
         q, sub: 'Nom des médicaments ou photo de l\'ordonnance. Seule l\'équipe voit votre liste.', body: html`${tiles}${more}`,
         foot: D.rxMode ? bigNext('wz-next', 'wiz-next', READY.list(D)) : '',
-        voice: [{ t: q }, { t: 'Touchez ici pour photographier votre ordonnance.', sel: '[data-vid="r1"]' }, { t: 'Ou ici pour écrire la liste.', sel: '[data-vid="r2"]' }],
       };
     },
 
@@ -477,26 +448,22 @@
       const placeSub = (d) => (d.loc && d.loc.acc ? 'précision environ ' + d.loc.acc + ' m' : '');
       const row = (ilName, label, main, sub) => html`<div class="r">${il(ilName, 42)}<div class="rt"><small>${label}</small><b>${main}</b>${sub ? html`<span>${sub}</span>` : ''}</div></div>`;
       const rows = [];
-      let say = '';
       if (D.flow === 'send') {
         rows.push(row('agency', 'Agence de transport', partnerName(D), 'vers ' + D.city));
         rows.push(row(sizeOf(D).il, 'Colis', sizeOf(D).name + ' · ' + sizeOf(D).range));
         rows.push(row('from', 'Celui qui envoie', joinName(D.sender.first, D.sender.last), '+227 ' + U.fphone(D.sender.phone)));
         rows.push(row('to', 'Celui qui reçoit', joinName(D.recip.first, D.recip.last), '+227 ' + U.fphone(D.recip.phone)));
         rows.push(row('location', 'Nous venons prendre le colis à', placeText(D), placeSub(D)));
-        say = 'Un colis ' + sizeOf(D).name.toLowerCase() + ' pour l\'agence ' + partnerName(D) + ', vers ' + D.city + '. De la part de ' + joinName(D.sender.first, D.sender.last) + ', pour ' + joinName(D.recip.first, D.recip.last) + '.';
       } else if (D.flow === 'pickup') {
         rows.push(row('agency', 'Agence', partnerName(D)));
         rows.push(row(sizeOf(D).il, 'Colis', sizeOf(D).name + ' · ' + sizeOf(D).range));
         rows.push(row('id-card', 'Carte d\'identité', 'Photo prête'));
         rows.push(row('phone', 'Votre numéro', '+227 ' + U.fphone(D.myPhone)));
         rows.push(row('location', 'Nous apportons le colis à', placeText(D), placeSub(D)));
-        say = 'Nous allons chercher votre colis à l\'agence ' + partnerName(D) + ' et nous vous l\'apportons.';
       } else {
         rows.push(row('pharmacy', 'Pharmacie', partnerName(D)));
         rows.push(row(D.rxMode === 'photo' ? 'rx' : 'chat', 'Votre liste', D.rxMode === 'photo' ? 'Photo de l\'ordonnance' : cleanName(D.list).slice(0, 70)));
         rows.push(row('location', 'Nous livrons à', placeText(D), placeSub(D)));
-        say = 'Nous achetons vos médicaments à la pharmacie ' + partnerName(D) + ' et nous vous les apportons.';
       }
       const cnt = D.flow === 'pharma' ? 'Vous payez aussi les médicaments au livreur, au prix de la pharmacie.' : '';
       return {
@@ -507,7 +474,6 @@
           <div class="pay-row">${il('cash', 42)}<span>Vous payez le livreur.${cnt ? ' ' + cnt : ''}</span></div>
           ${NZ.company().maintenance ? html`<div class="err-box" style="margin-top:14px">${ic('alert', 26)}<div>Les commandes sont suspendues pour le moment.</div></div>` : ''}`,
         foot: html`<div class="foot"><button type="button" class="btn primary xl full" data-act="wiz-send">${ic('check', 30)}Envoyer ma commande</button></div>`,
-        voice: [{ t: 'Voici votre commande.' }, { t: say }, { t: 'Le prix est de ' + VO.fcfa(e.total) + (D.flow === 'pharma' ? ', plus les médicaments' : '') + '. Vous payez le livreur.', sel: '.price-big' }, { t: 'Si tout est bon, touchez le grand bouton vert pour envoyer.', sel: '[data-act="wiz-send"]' }],
       };
     },
   };
@@ -519,7 +485,7 @@
     const foot = S.foot !== undefined ? S.foot : bigNext('wz-next', 'wiz-next', READY[F.steps[n]](D));
     return html`<div class="wz">
       <div class="dots" aria-hidden="true">${F.steps.map((s, i) => html`<i class="${i < n ? 'done' : i === n ? 'now' : ''}"></i>`)}</div>
-      <div class="qrow">${S.il ? html`<span class="qill">${il(S.il, 54)}</span>` : ''}<div class="qtxt"><h1 class="qt">${nbsp(S.q)}</h1>${S.sub ? html`<p class="qs">${S.sub}</p>` : ''}</div>${VO.btn()}</div>
+      <div class="qrow">${S.il ? html`<span class="qill">${il(S.il, 54)}</span>` : ''}<div class="qtxt"><h1 class="qt">${nbsp(S.q)}</h1>${S.sub ? html`<p class="qs">${S.sub}</p>` : ''}</div></div>
       ${S.body}${foot}</div>`;
   }
   function onBind() {
@@ -533,7 +499,6 @@
     const S = STEPS[WZ.id](D);
     if (!WZ.ctx.main(frame(WZ.F, WZ.n, S, D))) return;
     NZ.bindTarget = D; NZ.onBind = onBind;
-    VO.screen(() => S.voice);
   }
   NZ.route('/new/:flow/:n', async (ctx) => {
     const flow = ctx.params.flow, F = FLOWS[flow], n = parseInt(ctx.params.n, 10);
@@ -579,10 +544,9 @@
   NZ.act('loc-get', () => {
     const D = NZ.draft; if (!D) return;
     const here = () => NZ.draft === D && WZ && WZ.id === 'where';
-    const fail = (msg) => { D.locState = ''; D.locErr = msg; VO.say(msg); if (here()) NZ.scrollKeep(renderStep); };
+    const fail = (msg) => { D.locState = ''; D.locErr = msg; if (here()) NZ.scrollKeep(renderStep); };
     if (!navigator.geolocation) return fail('Ce téléphone ne permet pas de partager la position. Touchez « Appelez-moi à la place ».');
     D.locState = 'wait'; D.locErr = ''; NZ.scrollKeep(renderStep);
-    VO.say('Je cherche votre position.');
     const onPos = (pos) => {
       if (!here()) { D.locState = ''; return; }
       const c = pos.coords;
@@ -613,7 +577,6 @@
     if (!NZ.draft) return;
     if (key === 'id') NZ.draft.photo = url; else if (key === 'rx') NZ.draft.rxPhoto = url;
     NZ.scrollKeep(renderStep);
-    VO.say('Photo prête');
   };
 
   function buildPayload(D) {
@@ -654,7 +617,6 @@
         location.hash = '#/order/' + r.order.id + '?new=1' + (rxFail ? '&rx=0' : '');
       } catch (e) {
         D.err = e.message + (e.network ? ' Votre commande n\'est pas perdue : touchez encore le bouton, il n\'y aura pas de doublon.' : '');
-        VO.say(D.err);
         renderStep();
         const b = $('.err-box'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'center', behavior: 'smooth' });
       }
@@ -680,7 +642,6 @@
     };
     NZ.olLoad = load;
     ctx.main(olView());
-    VO.screen(() => [{ t: 'Vos colis.' }].concat(OL.items.map((o) => ({ t: orderTitle(o) + '. ' + (ST[o.status] || ST.received).t + '.', sel: '[data-vid="o-' + o.id + '"]' }))));
     try { await load(true); } catch (e) { return ctx.fail(e); }
     ctx.poll(15000, () => load(false));
   });
@@ -726,11 +687,6 @@
       const s = JSON.stringify(r);
       if (s !== sig) { sig = s; NZ.scrollKeep(() => ctx.main(orderPage(r, isNew, rxFail))); }
     };
-    VO.screen(() => {
-      const o = NZ.currentOrder && NZ.currentOrder.order; if (!o) return [];
-      const st = ST[o.status] || ST.received;
-      return [{ t: orderTitle(o) + '. ' + st.t + '. ' + st.s, sel: '[data-vid="stp"]' }].concat(o.driver && !FINAL.includes(o.status) ? [{ t: 'Votre livreur s\'appelle ' + o.driver.name + '. Touchez le bouton vert pour l\'appeler.' }] : []);
-    });
     try { await load(); } catch (e) { return ctx.fail(e); }
     ctx.poll(12000, load);
   });
@@ -760,12 +716,12 @@
     ctx.main(html`<div class="accbox"><span class="av">${U.initials(realName(u) || '?')}</span><div><b>${realName(u) || 'Bienvenue'}</b><span>+227 ${U.fphone(u.phone)}</span></div></div>
       ${arow({ icon: 'edit', t: realName(u) ? 'Changer mon nom' : 'Ajouter mon nom', act: 'edit-name' })}
       ${arow({ icon: 'lock', t: 'Changer mon code secret', act: 'change-pin' })}
+      ${arow({ icon: 'bell', t: 'Alertes sur mon téléphone', s: 'Même application fermée', act: 'push-account' })}
       ${arow({ icon: 'tag', t: 'Nos prix', href: '#/tarifs' })}
       ${arow({ icon: 'help', t: 'Aide', href: '#/help' })}
       ${arow({ icon: 'share', t: 'Partager l\'application', href: '#/share' })}
       ${installed ? '' : arow({ icon: 'download', t: 'Mettre sur mon écran d\'accueil', act: 'install-app', noArrow: true })}
       ${arow({ icon: 'out', t: 'Me déconnecter', act: 'logout', cls: 'red', noArrow: true })}`);
-    VO.screen(() => [{ t: 'Votre compte. Votre numéro est le ' + VO.phone(u.phone) + '.' }]);
     NZ.refreshMe();
   };
 })((window.NZ = window.NZ || {}));

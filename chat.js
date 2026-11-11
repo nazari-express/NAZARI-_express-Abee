@@ -2,7 +2,7 @@
    Les messages et les photos disparaissent 24 h après leur envoi (la base les efface ; ici on ne les montre plus dès qu'ils sont périmés). */
 (function (NZ) {
   'use strict';
-  const U = NZ.ui, VO = NZ.voice, K = NZ.kit;
+  const U = NZ.ui, K = NZ.kit;
   const { html, raw, str, ic, il, fwhen } = U;
   const $ = (s) => document.querySelector(s);
   const SEEN = 'nz.chat.seen';
@@ -99,12 +99,6 @@
     CH = { staff: false, cid: '', order: ctx.query.order || '', items: [], last: 0, photo: '', sending: false, ctx };
     ctx.shell({ title: NZ.company().name, tab: 'chat', cls: 'cl chatpg', skeleton: false });
     ctx.main(html`<div class="chat" id="chat-list"></div>${composeHtml()}`);
-    VO.screen(() => {
-      const parts = [{ t: 'Discussion avec ' + NZ.company().name + '. Écrivez un message, ou touchez l\'appareil photo pour envoyer une photo.' }];
-      const lastTeam = CH.items.filter((m) => m.team && m.text).slice(-1)[0];
-      if (lastTeam) parts.push({ t: 'Dernier message de l\'équipe : ' + lastTeam.text, sel: '.bub[data-mid="' + lastTeam.id + '"]' });
-      return parts;
-    });
     try { await pull(true); } catch (e) { return ctx.fail(e); }
     paintList(true);
     ctx.poll(4000, async () => { const { fresh } = await pull(false); if (fresh) paintList(false); });
@@ -171,7 +165,7 @@
       paintList(true);
       return true;
     } catch (e) {
-      U.toast(e.message, 'err'); VO.say(e.message);
+      U.toast(e.message, 'err');
       return false;
     } finally { CH.sending = false; }
   }

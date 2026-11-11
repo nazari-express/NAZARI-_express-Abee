@@ -123,7 +123,7 @@
   }, { public: true });
 
   const FAQ = [
-    ['Comment passer une commande ?', 'Sur l\'accueil, touchez un des trois grands dessins : « Envoyer un colis », « Récupérer un colis » ou « Pharmacie ». Il n\'y a qu\'une question par écran. Le bouton rond avec le haut-parleur lit l\'écran à voix haute. À la fin vous recevez un numéro de commande, par exemple NZ-20261018-001-K7QF : gardez-le en entier, il sert au suivi.'],
+    ['Comment passer une commande ?', 'Sur l\'accueil, touchez un des trois grands dessins : « Envoyer un colis », « Récupérer un colis » ou « Pharmacie ». Il n\'y a qu\'une question par écran. À la fin vous recevez un numéro de commande, par exemple NZ-20261018-001-K7QF : gardez-le en entier, il sert au suivi.'],
     ['Combien coûte la livraison ?', 'Le prix dépend de la taille du colis : de 1 000 FCFA pour un petit colis jusqu\'à 2 500 FCFA pour un grand colis. Au-delà de 20 kg, le prix est confirmé sur devis. Un petit supplément s\'ajoute si vous êtes loin du centre d\'Agadez. Le prix est toujours visible avant d\'envoyer la commande.'],
     ['Comment envoyer un colis à l\'agence ?', 'Touchez « Envoyer un colis », choisissez l\'agence de transport et la ville, puis la taille du colis. Donnez votre prénom, votre nom et votre numéro, puis ceux de la personne qui reçoit. Partagez votre position avec le téléphone : un livreur vient chercher le colis directement chez vous et le dépose à l\'agence. Pas besoin de carte d\'identité pour envoyer.'],
     ['Comment récupérer un colis arrivé à l\'agence ?', 'Touchez « Récupérer un colis », choisissez l\'agence, puis prenez en photo votre carte d\'identité : elle est obligatoire, et votre nom y est déjà écrit. Ajoutez votre numéro et partagez votre position. Le livreur retire le colis à l\'agence et vous le livre à domicile.'],
@@ -287,6 +287,7 @@
       <div class="list">
         ${staffRows}
         ${row({ icon: 'bell', title: 'Notifications', sub: 'Mes alertes', href: '#/messages' })}
+        ${row({ icon: 'bell', title: 'Alertes sur mon téléphone', sub: 'Même application fermée', act: 'push-account', noArrow: true })}
         ${row({ icon: 'share', title: 'Partager l\'application', sub: 'Code QR et lien WhatsApp', href: '#/share' })}
         ${installable ? row({ icon: 'download', title: 'Installer l\'application', sub: 'L\'ajouter à l\'écran d\'accueil', act: 'install-app', noArrow: true }) : ''}
         ${row({ icon: 'help', title: 'Aide et questions', sub: 'Questions fréquentes', href: '#/help' })}
