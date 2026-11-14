@@ -295,6 +295,7 @@
       <div class="mt-grid">
         ${tile('#/admin/config', 'sliders', 'Prix et réglages', 'Tarifs, WhatsApp', '', 'mt-config')}
         ${tile('#/admin/zones', 'map', 'Quartiers', 'Zones et suppléments', 't1', 'mt-zones')}
+        ${tile('#/admin/places', 'pin', 'Repères sur la carte', 'Entreprises et lieux', 't3', 'mt-places')}
         ${tile('#/admin/partners', 'bus', 'Agences et pharmacies', 'La liste des clients', 't2', 'mt-partners')}
         ${tile('#/admin/push', 'bell', 'Alertes du téléphone', 'Message du jour', 't3', 'mt-push')}
       </div>

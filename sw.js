@@ -5,13 +5,13 @@
    change cette ligne, donc le navigateur installe la nouvelle version tout seul. */
 'use strict';
 
-const BUILD = '9973203d8d';
+const BUILD = 'bc03474509';
 const CACHE = 'nz-static-' + BUILD;
 
 const CORE = [
   'index.html', 'app.css', 'simple.css', 'manifest.webmanifest',
   'ui.js', 'core.js', 'shared.js', 'kit.js', 'views-a.js', 'simple.js', 'chat.js',
-  'driver.js', 'admin.js', 'admin2.js', 'push.js', 'boot.js'
+  'driver.js', 'admin.js', 'admin2.js', 'push.js', 'map.js', 'track.js', 'places.js', 'boot.js'
 ];
 const EXTRA = ['logo-nazari.webp', 'icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'badge-96.png'];
 

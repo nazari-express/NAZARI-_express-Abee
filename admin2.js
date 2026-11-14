@@ -306,7 +306,9 @@
     'quartier.save': ['Quartier enregistré', 'map'], 'quartier.delete': ['Quartier supprimé', 'map'],
     'partner.save': ['Partenaire enregistré', 'bus'], 'partner.delete': ['Partenaire supprimé', 'bus'], 'announce': ['Annonce envoyée', 'mega'],
     'id.view': ['Carte d\'identité consultée', 'eye'], 'push.save': ['Alertes du téléphone modifiées', 'bell'],
+    'place.save': ['Repère enregistré', 'pin'], 'place.delete': ['Repère supprimé', 'pin'],
   };
+  const PLACE_KIND = { shop: 'Commerce', project: 'Projet', pharmacy: 'Pharmacie', agency: 'Agence', health: 'Santé', school: 'École', mosque: 'Mosquée', market: 'Marché', hotel: 'Hôtel, restaurant', landmark: 'Autre repère' };
   const CFG_LABEL = { price_small: 'Prix 0–5 kg', price_medium: 'Prix 5–10 kg', price_large: 'Prix 10–20 kg', price_xl: 'Prix + de 20 kg', express_fee: 'Express', far_fee: 'Zone éloignée', pharmacy_fee: 'Pharmacie' };
   const AUD = { clients: 'aux clients', drivers: 'à l\'équipe', all: 'à tout le monde' };
   function logDetail(x) {
@@ -337,6 +339,8 @@
       out.push(d.far ? 'Zone éloignée' : 'Zone normale');
     } else if (x.action === 'partner.save') {
       out.push((d.kind === 'pharmacy' ? 'Pharmacie' : 'Agence') + (d.new ? ' ajoutée' : ' modifiée'));
+    } else if (x.action === 'place.save') {
+      out.push(PLACE_KIND[d.kind] || 'Repère');
     } else if (x.action === 'announce') {
       out.push('Envoyée ' + (AUD[d.audience] || '') + ' (' + d.sent + ' personne' + (d.sent > 1 ? 's' : '') + ')');
     } else if (x.action === 'id.view') {

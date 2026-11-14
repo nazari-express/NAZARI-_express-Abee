@@ -104,6 +104,7 @@
       ${lock ? html`<div class="notice">${ic('lock', 18)}<div>${lock}</div></div>` : ''}
       ${V.idCardBox(o, { can: mine && ['accepted', 'preparing', 'in_delivery'].includes(o.status), note: 'La photo est effacée peu après la fin de la course.',
         why: free ? 'La carte d\'identité du client s\'affiche quand vous prenez la course.' : '' })}
+      ${NZ.track ? NZ.track.slot : ''}
       ${from}${to}
       ${o.service !== 'pharmacy' ? html`<div class="card"><div class="h2" style="margin-bottom:4px">Colis</div>${V.kv([['Poids', Number(o.weight_kg).toString().replace('.', ',') + ' kg'], ['Dimensions', dims], ['Contenu', o.desc], ['Message', o.note]])}</div>` : (o.note ? html`<div class="card"><div class="h2">Message</div><p>${o.note}</p></div>` : '')}
       ${o.status === 'delivered' ? html`<div class="card"><div class="h2" style="margin-bottom:6px">Livraison terminée</div><div class="muted">Livré ${fwhen(o.delivered_at)}</div></div>` : ''}
@@ -116,7 +117,7 @@
       const r = await NZ.api('order.get', { id: ctx.params.id });
       NZ.currentOrder = r;
       const s = JSON.stringify(r);
-      if (s !== sig) { sig = s; NZ.scrollKeep(() => ctx.main(driverOrderView(r))); }
+      if (s !== sig) { sig = s; NZ.scrollKeep(() => { ctx.main(driverOrderView(r)); if (NZ.track) NZ.track.driver(ctx, r); }); }
     };
     NZ.drvLoad = load;
     try { await load(); } catch (e) { return ctx.fail(e); }

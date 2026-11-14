@@ -665,6 +665,7 @@
       ${isNew && o.status === 'received' ? html`<div class="stp" style="margin-bottom:12px">${il('success', 96)}<h1>Commande envoyée !</h1><p>Nous la validons très vite. Vous suivrez tout ici.</p></div>` : ''}
       ${isNew && rxFail ? html`<div class="err-box">${ic('alert', 26)}<div>Votre ordonnance n'est pas partie. Envoyez-la en photo dans la discussion.</div></div>` : ''}
       <div class="stp ${st.cls}" data-vid="stp">${il(st.il, 100)}<h1>${st.t}</h1><p>${st.s}</p><span class="code num">${o.code}</span>${track}</div>
+      ${NZ.track ? NZ.track.slot : ''}
       ${drv && !FINAL.includes(o.status) ? html`<div class="cbox"><h2>Votre livreur</h2><div class="drv"><span class="av">${U.initials(drv.name)}</span><div><b>${drv.name}</b><span>+227 ${U.fphone(drv.phone)}</span></div></div>
         <div style="margin-top:14px">${btn({ href: U.telLink(drv.phone), label: 'Appeler le livreur', kind: 'primary', full: true, icon: 'phone', size: 'xl' })}</div></div>` : ''}
       <div class="cbox"><h2>${orderTitle(o)}</h2>
@@ -685,7 +686,7 @@
       final = FINAL.includes(r.order.status);
       NZ.currentOrder = r;
       const s = JSON.stringify(r);
-      if (s !== sig) { sig = s; NZ.scrollKeep(() => ctx.main(orderPage(r, isNew, rxFail))); }
+      if (s !== sig) { sig = s; NZ.scrollKeep(() => { ctx.main(orderPage(r, isNew, rxFail)); if (NZ.track) NZ.track.client(ctx, r); }); }
     };
     try { await load(); } catch (e) { return ctx.fail(e); }
     ctx.poll(12000, load);
